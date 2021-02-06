@@ -1,2 +1,0 @@
-C:\Users\adrie\Desktop\Efrei\traitement d'image\Image-Analysis---Parking\Projet_Parking\x64\Debug\Projet_Parking.exe
-C:\Users\adrie\Desktop\Efrei\traitement d'image\Image-Analysis---Parking\Projet_Parking\x64\Debug\Projet_Parking.pdb
