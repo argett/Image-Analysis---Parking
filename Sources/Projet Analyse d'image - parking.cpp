@@ -9,12 +9,41 @@
 using namespace cv;
 using namespace std;
 
+
 int main()
 {
-    Mat image = Mat::zeros(300, 600, CV_8UC3);
-    circle(image, Point(250, 150), 100, Scalar(0, 255, 128), -100);
-    circle(image, Point(350, 150), 100, Scalar(255, 255, 255), -100);
+    char wndname[] = "Drawing Demo";
+    const int DELAY = 5;
+    int lineType = LINE_AA; // change it to LINE_8 to see non-antialiased graphics
+    int i, width = 600, height = 300;
+    int x1 = -width / 2, x2 = width * 3 / 2, y1 = -height / 2, y2 = height * 3 / 2;
+    RNG rng(0xFFFFFFFF);
+
+    Mat image = Mat::zeros(height, width, CV_8UC3);
+    int r = 100;
+    int v = 100;
+    for (i = 0; i < 5; i++)
+    {
+        Point pt1, pt2;
+        pt1.x = rng.uniform(x1, x2);
+        pt1.y = rng.uniform(y1, y2);
+        pt2.x = rng.uniform(x1, x2);
+        pt2.y = rng.uniform(y1, y2);
+
+        line(image, pt1, pt2, Scalar(r, v, 255), rng.uniform(1, 1), lineType);
+        r += 100;
+        if (r > 255) {
+            r = 255;
+            v += 100;
+            if (v > 255)
+                v = 255;
+        }
+    }
+
     imshow("Display Window", image);
+
+    //HoughLines() A FAIRE EN PRENANT LE FICHIER DE JULIE 
+
     waitKey(0);
     return 0;
 }
