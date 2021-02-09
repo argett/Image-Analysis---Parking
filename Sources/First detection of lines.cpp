@@ -10,7 +10,7 @@ using namespace std;
 int main()
 {
     //read the image file
-    Mat img = imread("C:/Users/Julie/Pictures/Images_OpenCV/parking1.jpg");
+    Mat img = imread("./Images/parking1.jpg");
 
     if (img.empty()) // Check for failure
     {
