@@ -19,11 +19,7 @@ int main()
         return -1;
     }
 
-    //circle(image, Point(250, 150), 100, Scalar(0, 255, 128), -100);
-    //circle(image, Point(350, 150), 100, Scalar(255, 255, 255), -100);
-
     // Convert to gray-scale
-
     Mat greyMat, colorMat;
     cvtColor(img, greyMat, cv::COLOR_RGB2GRAY);
 
@@ -37,20 +33,18 @@ int main()
     vector<Vec4i> lines;
     
     // Apply Hough Transform
-    HoughLinesP(edges, lines, 1, CV_PI / 180, 20,5, 10);
-    
-    // Draw lines on the image
+    HoughLinesP(edges, lines, 1, CV_PI / 180, 100, 20, 20);
     for (size_t i = 0; i < lines.size(); i++) {
-            
-            Vec4i l = lines[i];
-            
-            line(greyMat, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255, 0, 0), 3, LINE_AA);
+
+        Vec4i l = lines[i];
+
+        line(greyMat, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255, 0, 0), 3, LINE_AA);
     }
+    imshow("Image parking", greyMat);
+        
 
 
-    imshow("Mon Parking Jacky", img);
-    imshow("Mon Parking Jacky GRIS", greyMat);
-
+    //imshow("Mon Parking Jacky", img);
     waitKey(0); // Wait for any keystroke in the window
 
     return 0;
