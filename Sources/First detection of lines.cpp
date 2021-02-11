@@ -104,6 +104,7 @@ int main()
 
     bool Pd_confondue; 
     bool Pf_confondue;
+    bool PdPf_confondue;
 
     // check the points between them to keep only one by line
     for (int u = 0; u < SecondLines.size(); u++) {
@@ -112,6 +113,7 @@ int main()
         {
             Pd_confondue = false;
             Pf_confondue = false;
+            PdPf_confondue = false; 
 
             Vec4i l = SecondLines[u];
             Vec4i l2 = SecondLines[v];
@@ -138,17 +140,46 @@ int main()
 
 
             if (dist(Pdx1, Pdx2) < marge_erreur && dist(Pdy1, Pdy2) < marge_erreur)
-            {
                 Pd_confondue = true;
-                break; 
-            }
+             
 
             if (dist(Pfx1, Pfx2) < marge_erreur && dist(Pfy1, Pfy2) < marge_erreur)
-            {
                 Pf_confondue = true;
-                break; 
-            }
 
+            if(dist(Pdx1, Pfx2) < marge_erreur && dist(Pdy2, Pfy1) < marge_erreur)
+                PdPf_confondue = true;
+
+
+            if (Pd_confondue && !Pf_confondue)
+            {
+                //TODO
+                // 1 check s'ils sont collinéaire + longeur du segment 
+                // 2 si collineaire prendre le plus grand 
+            }
+            else if (!Pd_confondue && Pf_confondue)
+            {
+                //TODO
+                //1 check s'ils sont collinéaire + longeur du segment 
+                // 2 si collineaire prendre le plus grand 
+            }
+            else if (Pd_confondue && Pf_confondue)
+            {
+                //TODO
+                // moyenne des pf et pd / les deux vecteurs pareils
+
+            }
+            else if (PdPf_confondue)
+            {
+                //TODO
+                // 1 Si collinéaire 
+                // 2 vérifier les points confondues et creer un nouveau vecteur avec les point restant 
+
+                //Sinon rien car supp dans les autres itérations
+            }
+            else 
+            {
+                cout << "OUII NTM" << endl;
+            }
         }
 
 
