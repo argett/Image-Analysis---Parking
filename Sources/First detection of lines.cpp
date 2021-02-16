@@ -122,21 +122,21 @@ int main()
 
             //point x depart ligne 1
             int Pdx1 = l[0];
-            //point y départ ligne 1
+            //point y dï¿½part ligne 1
             int Pdy1 = l[1];
             //point x fin ligne 1
-            int Pfx1 = l[3];
+            int Pfx1 = ligne[2];
             //point y fin ligne 1
-            int Pfy1 = l[4];
+            int Pfy1 = ligne[3];
 
             //point x depart ligne 2
             int Pdx2 = l2[0];
-            //point y départ ligne 2
+            //point y dï¿½part ligne 2
             int Pdy2 = l2[1];
             //point x fin ligne 2
-            int Pfx2 = l2[3];
+            int Pfx2 = ligne2[2];
             //point y fin ligne 2
-            int Pfy2 = l2[4];
+            int Pfy2 = ligne2[3];
 
 
             if (dist(Pdx1, Pdx2) < marge_erreur && dist(Pdy1, Pdy2) < marge_erreur)
@@ -153,13 +153,13 @@ int main()
             if (Pd_confondue && !Pf_confondue)
             {
                 //TODO
-                // 1 check s'ils sont collinéaire + longeur du segment 
+                // 1 check s'ils sont collinï¿½aire + longeur du segment 
                 // 2 si collineaire prendre le plus grand 
             }
             else if (!Pd_confondue && Pf_confondue)
             {
                 //TODO
-                //1 check s'ils sont collinéaire + longeur du segment 
+                //1 check s'ils sont collinï¿½aire + longeur du segment 
                 // 2 si collineaire prendre le plus grand 
             }
             else if (Pd_confondue && Pf_confondue)
@@ -171,10 +171,10 @@ int main()
             else if (PdPf_confondue)
             {
                 //TODO
-                // 1 Si collinéaire 
-                // 2 vérifier les points confondues et creer un nouveau vecteur avec les point restant 
+                // 1 Si collinï¿½aire 
+                // 2 vï¿½rifier les points confondues et creer un nouveau vecteur avec les point restant 
 
-                //Sinon rien car supp dans les autres itérations
+                //Sinon rien car supp dans les autres itï¿½rations
             }
             else 
             {
