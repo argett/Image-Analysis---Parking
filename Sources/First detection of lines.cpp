@@ -23,6 +23,35 @@ int  dist(int x, int y)
     }
 }
 
+int* point_to_vector(Vec4i segment)
+{
+    int* tab = new int[2];
+    tab[0] = segment[2] - segment[0];
+    tab[1] = segment[3] - segment[1];
+
+    cout << "vector X = " << tab[0] << ", vector Y = " << tab[1] << "\n";
+    return tab;
+}
+
+bool areColinear(int* v1, int* v2)
+{
+    // no need to to check if the vectors are null because openCV doesn t create/detect null lines with Hought
+    float k = (float)v1[0] / (float)v2[0];
+
+    // we don t need exactly colinear vectors but more a tendency (+/- 20%)
+    float kmin = k * 0.8;
+    float kmax = k * 1.2;
+
+    if (v2[1] * kmin <= v1[1] && v2[1] * kmax >= v1[1])
+        return true;
+    else
+        return false;
+}
+
+int length(int* vector) 
+{
+    return sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
+}
 
 
 int main()
@@ -99,8 +128,15 @@ int main()
         circle(BW_mat, Point(l[2], l[3]), 2, Scalar(100, 255, 255), 10);
     }
 
+    // visualisation des points
     circle(BW_mat, Point(0, 0), 10, Scalar(100, 255, 255), 10);
 
+
+    // ----------- creation of third image ----------------
+
+    // To store all lines/points without points in the same near area (we don t know how to delete so we create a new one)
+    vector<Vec4i> ThirdLines = SecondLines;
+    cout << "longeur = " << ThirdLines.size() << "\n";
     bool Pd_confondue; 
     bool Pf_confondue;
     bool PdPf_confondue;
@@ -153,6 +189,21 @@ int main()
 
             if (Pd_confondue && !Pf_confondue)
             {
+                int* Vect1 = point_to_vector(ligne);
+                int* Vect2 = point_to_vector(ligne2);
+
+                if (areColinear(Vect1, Vect2)) 
+                {
+                    if (length(Vect1) > length(Vect2)) {
+                        // DELETE A MODIFIER
+                        delete &ThirdLines[v];
+                        cout << "delete \n";
+                    }
+                    else {
+                        cout << "delete \n";
+                        delete &ThirdLines[u];
+                    }
+                }
                 //TODO
                 // 1 check s'ils sont collinéaire + longeur du segment 
                 // 2 si collineaire prendre le plus grand 
@@ -179,7 +230,7 @@ int main()
             }
             else 
             {
-                cout << "OUII NTM" << endl;
+                //cout << "Julie est contente" << endl;
             }
             
         }
@@ -190,6 +241,7 @@ int main()
 
     }
 
+    cout << "longeur = " << ThirdLines.size();
 
     imshow("img", img);
     imshow("GREY", greyMat);
