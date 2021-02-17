@@ -64,6 +64,16 @@ bool areColinear(int* v1, int* v2)
         return false;
 }
 
+bool AreTrueColinear(int* v1, int* v2)
+{
+    float k = (float)v1[0] / (float)v2[0];
+    //lilian the nazi Arrrr
+    if (v2[1] * k == v1[1])
+        return true;
+    else
+        return false;
+}
+
 void display_lines(vector<Vec4i> lines, Mat img) 
 {
     for (size_t j = 0; j < lines.size(); j++) {
@@ -131,6 +141,28 @@ bool areSame_startEnd_Points(Vec4i l1, Vec4i l2, int margin_error)
 int length(int* vector)
 {
     return sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
+}
+
+Point intersection(Vec4i l1, Vec4i l2)
+{
+    int* Vect3 = point_to_vector(l1);
+    int* Vect4 = point_to_vector(l2);
+    //we want the equation of the line of type y = ax + b
+    float a1 = ((float)l1[3] - (float)l1[1]) / ((float)l1[2] - (float)l1[0]);
+    //we use e point of the line to find b
+    float b1 = (float)l1[1] - (a1 * (float)l1[0]);
+
+    float a2 = ((float)l2[3] - (float)l2[1]) / ((float)l2[2] - (float)l2[0]);
+    float b2 = (float)l2[1] - (a2 * (float)l2[0]);
+    cout << "a1 = " << a1 << "\n";
+    cout << "a2 = " << a2 << "\n";
+    //we are looking for the intersection point
+     
+    int x = (b2 - b1) / (a1 - a2);
+    int y = (a1 * x) + b1;
+    
+    
+    return Point(x, y);
 }
 
 
@@ -345,6 +377,26 @@ int main()
         }
         
     }
+    for (size_t u = 0; u < best_lines.size() - 1; u++)
+    {
+        
+
+        for (size_t v = u + 1; v < best_lines.size(); v++)
+        {
+            Vec4i ligne = best_lines[u];
+            Vec4i ligne2 = best_lines[v];
+
+
+            if (!AreTrueColinear(point_to_vector(ligne), point_to_vector(ligne2)))
+            {
+                //Point intersection = intersection(ligne, ligne2);
+                circle(BW_mat2, intersection(ligne, ligne2), 2, Scalar(100, 255, 255), 10);
+
+            }
+        }
+        
+    }
+
 
     cout << "2nd line size = " << parking_lines.size() << " \n";
     cout << "3rd line size = " << best_lines.size() << " \n";
