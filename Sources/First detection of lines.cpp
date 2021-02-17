@@ -73,6 +73,66 @@ void display_lines(vector<Vec4i> lines, Mat img)
     }
 }
 
+bool areSame_startPoint(Vec4i l1, Vec4i l2)
+{
+    //Distance max entre deux points pour etre confondues
+    int marge_erreur = 50;
+
+    //point x depart ligne 1
+    int Pdx1 = l1[0];
+    //point y départ ligne 1
+    int Pdy1 = l1[1];
+
+    //point x depart ligne 2
+    int Pdx2 = l2[0];
+    //point y départ ligne 2
+    int Pdy2 = l2[1];
+
+
+    if (dist(Pdx1, Pdx2) < marge_erreur && dist(Pdy1, Pdy2) < marge_erreur)
+        return true;
+}
+
+bool areSame_endPoint(Vec4i l1, Vec4i l2)
+{
+    //Distance max entre deux points pour etre confondues
+    int marge_erreur = 50;
+
+    //point x fin ligne 1
+    int Pfx1 = l1[2];
+    //point y fin ligne 1
+    int Pfy1 = l1[3];
+
+    //point x fin ligne 2
+    int Pfx2 = l2[2];
+    //point y fin ligne 2
+    int Pfy2 = l2[3];
+
+    if (dist(Pfx1, Pfx2) < marge_erreur && dist(Pfy1, Pfy2) < marge_erreur)
+        return true;
+    return false;
+}
+
+bool areSame_allPoints(Vec4i l1, Vec4i l2)
+{
+    //Distance max entre deux points pour etre confondues
+    int marge_erreur = 50;
+
+    //point x depart ligne 1
+    int Pdx1 = l1[0];
+    //point y fin ligne 1
+    int Pfy1 = l1[3];
+
+    //point y départ ligne 2
+    int Pdy2 = l2[1];
+    //point x fin ligne 2
+    int Pfx2 = l2[2];
+
+    if (dist(Pdx1, Pfx2) < marge_erreur && dist(Pdy2, Pfy1) < marge_erreur)
+        return true;
+    return false;
+}
+
 int length(int* vector)
 {
     return sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
@@ -177,45 +237,12 @@ int main()
 
         for (size_t v = u + 1; v < best_lines.size(); v++)
         {
-
-            Pd_confondue = false;
-            Pf_confondue = false;
-            PdPf_confondue = false;
-
             Vec4i ligne = best_lines[u];
             Vec4i ligne2 = best_lines[v];
 
-            //Distance max entre deux points pour etre confondues
-            int marge_erreur = 50;
-
-            //point x depart ligne 1
-            int Pdx1 = ligne[0];
-            //point y départ ligne 1
-            int Pdy1 = ligne[1];
-            //point x fin ligne 1
-            int Pfx1 = ligne[2];
-            //point y fin ligne 1
-            int Pfy1 = ligne[3];
-
-            //point x depart ligne 2
-            int Pdx2 = ligne2[0];
-            //point y départ ligne 2
-            int Pdy2 = ligne2[1];
-            //point x fin ligne 2
-            int Pfx2 = ligne2[2];
-            //point y fin ligne 2
-            int Pfy2 = ligne2[3];
-
-
-            if (dist(Pdx1, Pdx2) < marge_erreur && dist(Pdy1, Pdy2) < marge_erreur)
-                Pd_confondue = true;
-
-            if (dist(Pfx1, Pfx2) < marge_erreur && dist(Pfy1, Pfy2) < marge_erreur)
-                Pf_confondue = true;
-
-            if (dist(Pdx1, Pfx2) < marge_erreur && dist(Pdy2, Pfy1) < marge_erreur)
-                PdPf_confondue = true;
-
+            Pd_confondue = areSame_startPoint(ligne, ligne2);
+            Pf_confondue = areSame_endPoint(ligne, ligne2);
+            PdPf_confondue = areSame_allPoints(ligne, ligne2);
 
             if (Pd_confondue && !Pf_confondue)
             {
