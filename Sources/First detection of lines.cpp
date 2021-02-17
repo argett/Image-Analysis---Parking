@@ -41,19 +41,18 @@ int* point_to_vector(Vec4i segment)
     int* tab = new int[2];
     tab[0] = segment[2] - segment[0];
     tab[1] = segment[3] - segment[1];
-
-    cout << "vector X = " << tab[0] << ", vector Y = " << tab[1] << "\n";
     return tab;
 }
 
 bool areColinear(int* v1, int* v2)
 {
     // no need to to check if the vectors are null because openCV doesn t create/detect null lines with Hought
+    // u = k * v
     float k = (float)v1[0] / (float)v2[0];
 
     // we don t need exactly colinear vectors but more a tendency (+/- 20%)
-    float kmin = k * 0.5;
-    float kmax = k * 1.5;
+    float kmin = k * 0.8;
+    float kmax = k * 1.2;
 
     if (v2[1] * kmin <= v1[1] && v2[1] * kmax >= v1[1])
         return true;
@@ -73,31 +72,26 @@ void display_lines(vector<Vec4i> lines, Mat img)
     }
 }
 
-bool areSame_startPoint(Vec4i l1, Vec4i l2)
+bool areSame_startPoint(Vec4i l1, Vec4i l2, int margin_error)
 {
-    //Distance max entre deux points pour etre confondues
-    int marge_erreur = 50;
-
     //point x depart ligne 1
     int Pdx1 = l1[0];
-    //point y départ ligne 1
+    //point y dï¿½part ligne 1
     int Pdy1 = l1[1];
 
     //point x depart ligne 2
     int Pdx2 = l2[0];
-    //point y départ ligne 2
+    //point y dï¿½part ligne 2
     int Pdy2 = l2[1];
 
 
-    if (dist(Pdx1, Pdx2) < marge_erreur && dist(Pdy1, Pdy2) < marge_erreur)
+    if (dist(Pdx1, Pdx2) < margin_error && dist(Pdy1, Pdy2) < margin_error)
         return true;
+    return false;
 }
 
-bool areSame_endPoint(Vec4i l1, Vec4i l2)
+bool areSame_endPoint(Vec4i l1, Vec4i l2, int margin_error)
 {
-    //Distance max entre deux points pour etre confondues
-    int marge_erreur = 50;
-
     //point x fin ligne 1
     int Pfx1 = l1[2];
     //point y fin ligne 1
@@ -108,27 +102,24 @@ bool areSame_endPoint(Vec4i l1, Vec4i l2)
     //point y fin ligne 2
     int Pfy2 = l2[3];
 
-    if (dist(Pfx1, Pfx2) < marge_erreur && dist(Pfy1, Pfy2) < marge_erreur)
+    if (dist(Pfx1, Pfx2) < margin_error && dist(Pfy1, Pfy2) < margin_error)
         return true;
     return false;
 }
 
-bool areSame_allPoints(Vec4i l1, Vec4i l2)
+bool areSame_startEnd_Points(Vec4i l1, Vec4i l2, int margin_error)
 {
-    //Distance max entre deux points pour etre confondues
-    int marge_erreur = 50;
-
     //point x depart ligne 1
     int Pdx1 = l1[0];
     //point y fin ligne 1
     int Pfy1 = l1[3];
 
-    //point y départ ligne 2
+    //point y dï¿½part ligne 2
     int Pdy2 = l2[1];
     //point x fin ligne 2
     int Pfx2 = l2[2];
 
-    if (dist(Pdx1, Pfx2) < marge_erreur && dist(Pdy2, Pfy1) < marge_erreur)
+    if (dist(Pdx1, Pfx2) < margin_error && dist(Pdy2, Pfy1) < margin_error)
         return true;
     return false;
 }
@@ -237,16 +228,19 @@ int main()
 
         for (size_t v = u + 1; v < best_lines.size(); v++)
         {
+            //Distance max entre deux points pour etre confondues
+            int marge_erreur = 50;
+
             Vec4i ligne = best_lines[u];
             Vec4i ligne2 = best_lines[v];
 
-            Pd_confondue = areSame_startPoint(ligne, ligne2);
-            Pf_confondue = areSame_endPoint(ligne, ligne2);
-            PdPf_confondue = areSame_allPoints(ligne, ligne2);
+            Pd_confondue = areSame_startPoint(ligne, ligne2, marge_erreur);
+            Pf_confondue = areSame_endPoint(ligne, ligne2, marge_erreur);
+            PdPf_confondue = areSame_startEnd_Points(ligne, ligne2, marge_erreur);
 
             if (Pd_confondue && !Pf_confondue)
             {
-                // 1 check s'ils sont collinéaire + longeur du segment 
+                // 1 check s'ils sont collinï¿½aire + longeur du segment 
                 // 2 si collineaire prendre le plus grand 
 
                 int* Vect1 = point_to_vector(ligne);
@@ -269,7 +263,7 @@ int main()
             else if (!Pd_confondue && Pf_confondue)
             {
                 //TODO
-                //1 check s'ils sont collinéaire + longeur du segment 
+                //1 check s'ils sont collinï¿½aire + longeur du segment 
                 // 2 si collineaire prendre le plus grand 
 
                 int* Vect1 = point_to_vector(ligne);
@@ -305,10 +299,10 @@ int main()
             else if (PdPf_confondue)
             {
                 //TODO
-                // 1 Si collinéaire 
-                // 2 vérifier les points confondues et creer un nouveau vecteur avec les point restant 
+                // 1 Si collinï¿½aire 
+                // 2 vï¿½rifier les points confondues et creer un nouveau vecteur avec les point restant 
 
-                //Sinon rien car supp dans les autres itérations
+                //Sinon rien car supp dans les autres itï¿½rations
             }
             else
             {
