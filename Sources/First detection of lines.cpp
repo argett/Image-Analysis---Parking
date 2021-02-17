@@ -224,99 +224,133 @@ int main()
     bool PdPf_confondue;
 
     // check the points between them to keep only one by line
-    for (size_t u = 0; u < best_lines.size() - 1; u++) {
-
-        for (size_t v = u + 1; v < best_lines.size(); v++)
+    for (size_t u = 0; u < best_lines.size() - 1; u++) 
+    {
+        // flag, we repeat the state u n-times to remove all occurencies
+        bool allClear = false;
+        while (!allClear) 
         {
-            //Distance max entre deux points pour etre confondues
-            int marge_erreur = 50;
+            // by definition, everything is clear, if there is an occurence we put to false
+            allClear = true;
 
-            Vec4i ligne = best_lines[u];
-            Vec4i ligne2 = best_lines[v];
-
-            Pd_confondue = areSame_startPoint(ligne, ligne2, marge_erreur);
-            Pf_confondue = areSame_endPoint(ligne, ligne2, marge_erreur);
-            PdPf_confondue = areSame_startEnd_Points(ligne, ligne2, marge_erreur);
-
-            if (Pd_confondue && !Pf_confondue)
+            for (size_t v = u + 1; v < best_lines.size(); v++)
             {
-                // 1 check s'ils sont collinéaire + longeur du segment 
-                // 2 si collineaire prendre le plus grand 
+                //Distance max entre deux points pour etre confondues
+                int margin_error = 50;
 
-                int* Vect1 = point_to_vector(ligne);
-                int* Vect2 = point_to_vector(ligne2);
+                Vec4i ligne = best_lines[u];
+                Vec4i ligne2 = best_lines[v];
 
-                if (areColinear(Vect1, Vect2))
+                Pd_confondue = areSame_startPoint(ligne, ligne2, margin_error);
+                Pf_confondue = areSame_endPoint(ligne, ligne2, margin_error);
+                PdPf_confondue = areSame_startEnd_Points(ligne, ligne2, margin_error);
+
+                if (Pd_confondue && !Pf_confondue)
                 {
-                    if (length(Vect1) > length(Vect2)) {
+                    // 1 check s'ils sont collinéaire + longeur du segment 
+                    // 2 si collineaire prendre le plus grand 
+
+                    int* Vect1 = point_to_vector(ligne);
+                    int* Vect2 = point_to_vector(ligne2);
+
+                    if (areColinear(Vect1, Vect2))
+                    {
+                        if (length(Vect1) > length(Vect2)) 
+                        {
+
+                            best_lines.erase(best_lines.begin() + v);
+                            cout << "delete \n";
+                        }
+                        else 
+                        {
+                            cout << "delete \n";
+                            best_lines.erase(best_lines.begin() + u);
+                        }
+                        allClear = false;
+                    }
+                    else
+                    {
+                        cout << "erreor : !Pf_confondue & Pd_confondue = HORTOGONAL\n";
+                    }
+
+                }
+                else if (!Pd_confondue && Pf_confondue)
+                {
+                    //1 check s'ils sont collinéaire + longeur du segment 
+                    // 2 si collineaire prendre le plus grand 
+
+                    int* Vect1 = point_to_vector(ligne);
+                    int* Vect2 = point_to_vector(ligne2);
+
+                    if (areColinear(Vect1, Vect2))
+                    {
+                        if (length(Vect1) > length(Vect2)) 
+                        {
+
+                            best_lines.erase(best_lines.begin() + v);
+                            cout << "delete \n";
+                        }
+                        else 
+                        {
+                            cout << "delete \n";
+                            best_lines.erase(best_lines.begin() + u);
+                        }
+                        allClear = false;
+                    }
+                    else
+                    {
+                        cout << "erreor : Pf_confondue & !Pd_confondue = HORTOGONAL\n";
+                    }
+
+                }
+                else if (Pd_confondue && Pf_confondue)
+                {
+                    // moyenne des pf et pd / les deux vecteurs pareils
+                    Vec4i average_segment = average_line(ligne, ligne2);
+                    best_lines.erase(best_lines.begin() + v);
+                    best_lines.erase(best_lines.begin() + u);
+
+                    //add to the list
+                    best_lines.push_back(average_segment);
+                    allClear = false;
+
+                }
+                else if (PdPf_confondue)
+                {
+                    // 1 Si collinéaire 
+                    // 2 vérifier les points confondues et creer un nouveau vecteur avec les point restant 
+
+                    int* Vect1 = point_to_vector(ligne);
+                    int* Vect2 = point_to_vector(ligne2);
+
+                    if (areColinear(Vect1, Vect2))
+                    {
+                        Vec4i fusioned_vector;
+                        fusioned_vector[0] = ligne[0];
+                        fusioned_vector[1] = ligne[1];
+                        fusioned_vector[2] = ligne2[2];
+                        fusioned_vector[3] = ligne2[3];
 
                         best_lines.erase(best_lines.begin() + v);
-                        cout << "delete \n";
-                    }
-                    else {
-                        cout << "delete \n";
                         best_lines.erase(best_lines.begin() + u);
+
+                        best_lines.push_back(fusioned_vector);
+
+                        allClear = false;
+                    }
+                    else
+                    {
+                        cout << "erreor : PDPF_CONFONDUE = HORTOGONAL\n";
                     }
                 }
                 else
                 {
-                    // TODO (perpendiculaires)
+                    //cout << "Julie est contente" << endl;
                 }
 
             }
-            else if (!Pd_confondue && Pf_confondue)
-            {
-                //TODO
-                //1 check s'ils sont collinéaire + longeur du segment 
-                // 2 si collineaire prendre le plus grand 
-
-                int* Vect1 = point_to_vector(ligne);
-                int* Vect2 = point_to_vector(ligne2);
-
-                if (areColinear(Vect1, Vect2))
-                {
-                    if (length(Vect1) > length(Vect2)) {
-
-                        best_lines.erase(best_lines.begin() + v);
-                        cout << "delete \n";
-                    }
-                    else {
-                        cout << "delete \n";
-                        best_lines.erase(best_lines.begin() + u);
-                    }
-                }
-                else
-                {
-                    // TODO (perpendiculaires)
-                }
-
-            }
-            else if (Pd_confondue && Pf_confondue)
-            {
-                //TODO
-                // moyenne des pf et pd / les deux vecteurs pareils
-                Vec4i average_segment = average_line(ligne, ligne2);
-                best_lines.erase(best_lines.begin() + v);
-                best_lines.erase(best_lines.begin() + u);
-
-                //add to the list
-                best_lines.push_back(average_segment);
-
-            }
-            else if (PdPf_confondue)
-            {
-                //TODO
-                // 1 Si collinéaire 
-                // 2 vérifier les points confondues et creer un nouveau vecteur avec les point restant 
-
-                //Sinon rien car supp dans les autres itérations
-            }
-            else
-            {
-                //cout << "Julie est contente" << endl;
-            }
-
         }
+        
     }
 
     cout << "2nd line size = " << parking_lines.size() << " \n";
@@ -326,10 +360,10 @@ int main()
     imshow("GREY", greyMat);
 
     display_lines(parking_lines, BW_mat);
-    //display_lines(best_lines, BW_mat2);
+    display_lines(best_lines, BW_mat2);
 
     // 3 et 5 sont sur une même  ligne, un des deux doit etre DEGAGE CE FDP
-
+    /*
     cout << "x3 depart = " << best_lines[3][0] << " \n";
     cout << "y3 depart = " << best_lines[3][1] << " \n";
     cout << "x3 fin = " << best_lines[3][2] << " \n";
@@ -343,7 +377,7 @@ int main()
     cout << "depart confondu = " << areSame_startPoint(best_lines[3], best_lines[5], 50) << " \n";
     cout << "fin confondu = " << areSame_endPoint(best_lines[3], best_lines[5], 50) << " \n";
     cout << "tout confondu = " << areSame_startEnd_Points(best_lines[3], best_lines[5], 50) << " \n";
-
+    */
     imshow("Image parking lines", BW_mat);
     imshow("Image parking best_lines", BW_mat2);
 
