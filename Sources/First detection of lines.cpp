@@ -54,7 +54,11 @@ bool areColinear(int* v1, int* v2)
     float kmin = k * 0.8;
     float kmax = k * 1.2;
 
-    if (v2[1] * kmin <= v1[1] && v2[1] * kmax >= v1[1])
+    cout << "k = " << k << "\n";
+    cout << "kmin = " << kmin << "\n";
+    cout << "kmax = " << kmax << "\n";
+
+    if (v2[1] * kmin >= v1[1] && v2[1] * kmax <= v1[1])
         return true;
     else
         return false;
@@ -180,10 +184,8 @@ int main()
     // Store the edges   
     Mat SecondEdges;
 
-    // Find the edges in the image using canny detector
+    // Find the edges in the image using canny detector, every pixel with color < 200 is black
     Canny(BW_mat, SecondEdges, 200, 255);
-
-    ///////////////////////////TEST//////////////////////////
 
      // image in black and white only with the lines detected + random white pixels
     Mat BW_mat2;
@@ -197,21 +199,13 @@ int main()
     // to get beautiful lines
     dilate(BW_mat2, BW_mat2, Mat(), Point(-1, -1), 1);
 
-    // Store the edges   
-    Mat SecondEdges2;
-
-    // Find the edges in the image using canny detector
-    Canny(BW_mat2, SecondEdges2, 200, 255);
-
-    ///////////////////////////FIN TEST///////////////////////
 
     // Create a vector to store lines of the image
     vector<Vec4i> parking_lines;
 
-
-
     // Apply Second Hough Transform
     HoughLinesP(SecondEdges, parking_lines, 1, CV_PI / 180, 100, 20, 10000);
+
 
 
     // ----------- creation of third image ----------------
@@ -236,7 +230,7 @@ int main()
             for (size_t v = u + 1; v < best_lines.size(); v++)
             {
                 //Distance max entre deux points pour etre confondues
-                int margin_error = 50;
+                int margin_error = 70;
 
                 Vec4i ligne = best_lines[u];
                 Vec4i ligne2 = best_lines[v];
@@ -257,7 +251,6 @@ int main()
                     {
                         if (length(Vect1) > length(Vect2)) 
                         {
-
                             best_lines.erase(best_lines.begin() + v);
                             cout << "delete \n";
                         }
@@ -361,25 +354,34 @@ int main()
 
     display_lines(parking_lines, BW_mat);
     display_lines(best_lines, BW_mat2);
+    /*
+    circle(BW_mat2, Point(best_lines[0][0], best_lines[0][1]), 2, Scalar(100, 255, 255), 10);
+    circle(BW_mat2, Point(best_lines[0][2], best_lines[0][3]), 2, 255, 10);
+
+    circle(BW_mat2, Point(best_lines[5][0], best_lines[5][1]), 2, Scalar(100, 255, 255), 10);
+    circle(BW_mat2, Point(best_lines[5][2], best_lines[5][3]), 2, 255, 10);
 
     // 3 et 5 sont sur une même  ligne, un des deux doit etre DEGAGE CE FDP
-    /*
-    cout << "x3 depart = " << best_lines[3][0] << " \n";
-    cout << "y3 depart = " << best_lines[3][1] << " \n";
-    cout << "x3 fin = " << best_lines[3][2] << " \n";
-    cout << "y3 fin = " << best_lines[3][3] << " \n";
+    
+    cout << "---------\n";
+
+    cout << "x0 depart = " << best_lines[0][0] << " \n";
+    cout << "y0 depart = " << best_lines[0][1] << " \n";
+    cout << "x0 fin = " << best_lines[0][2] << " \n";
+    cout << "y0 fin = " << best_lines[0][3] << " \n";
 
     cout << "x5 depart = " << best_lines[5][0] << " \n";
     cout << "y5 depart = " << best_lines[5][1] << " \n";
     cout << "x5 fin = " << best_lines[5][2] << " \n";
     cout << "y5 fin = " << best_lines[5][3] << " \n";
-
-    cout << "depart confondu = " << areSame_startPoint(best_lines[3], best_lines[5], 50) << " \n";
-    cout << "fin confondu = " << areSame_endPoint(best_lines[3], best_lines[5], 50) << " \n";
-    cout << "tout confondu = " << areSame_startEnd_Points(best_lines[3], best_lines[5], 50) << " \n";
+    
+    cout << "depart confondu = " << areSame_startPoint(best_lines[0], best_lines[5], 50) << " \n";
+    cout << "fin confondu = " << areSame_endPoint(best_lines[0], best_lines[5], 50) << " \n";
+    cout << "tout confondu = " << areSame_startEnd_Points(best_lines[0], best_lines[5], 50) << " \n";
+    cout << "sont colineaire = " << areColinear(point_to_vector(best_lines[0]), point_to_vector(best_lines[5])) << " \n";
     */
-    imshow("Image parking lines", BW_mat);
-    imshow("Image parking best_lines", BW_mat2);
+    imshow("Image parking lines - BW_mat", BW_mat);
+    imshow("Image parking best_lines - BW_Mat2", BW_mat2);
 
 
     waitKey(0); // Wait for any keystroke in the window
