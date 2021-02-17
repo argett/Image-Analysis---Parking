@@ -76,12 +76,12 @@ bool areSame_startPoint(Vec4i l1, Vec4i l2, int margin_error)
 {
     //point x depart ligne 1
     int Pdx1 = l1[0];
-    //point y dï¿½part ligne 1
+    //point y départ ligne 1
     int Pdy1 = l1[1];
 
     //point x depart ligne 2
     int Pdx2 = l2[0];
-    //point y dï¿½part ligne 2
+    //point y départ ligne 2
     int Pdy2 = l2[1];
 
 
@@ -114,7 +114,7 @@ bool areSame_startEnd_Points(Vec4i l1, Vec4i l2, int margin_error)
     //point y fin ligne 1
     int Pfy1 = l1[3];
 
-    //point y dï¿½part ligne 2
+    //point y départ ligne 2
     int Pdy2 = l2[1];
     //point x fin ligne 2
     int Pfx2 = l2[2];
@@ -240,7 +240,7 @@ int main()
 
             if (Pd_confondue && !Pf_confondue)
             {
-                // 1 check s'ils sont collinï¿½aire + longeur du segment 
+                // 1 check s'ils sont collinéaire + longeur du segment 
                 // 2 si collineaire prendre le plus grand 
 
                 int* Vect1 = point_to_vector(ligne);
@@ -258,12 +258,16 @@ int main()
                         best_lines.erase(best_lines.begin() + u);
                     }
                 }
+                else
+                {
+                    // TODO (perpendiculaires)
+                }
 
             }
             else if (!Pd_confondue && Pf_confondue)
             {
                 //TODO
-                //1 check s'ils sont collinï¿½aire + longeur du segment 
+                //1 check s'ils sont collinéaire + longeur du segment 
                 // 2 si collineaire prendre le plus grand 
 
                 int* Vect1 = point_to_vector(ligne);
@@ -274,12 +278,16 @@ int main()
                     if (length(Vect1) > length(Vect2)) {
 
                         best_lines.erase(best_lines.begin() + v);
-                        cout << "delete 2 \n";
+                        cout << "delete \n";
                     }
                     else {
-                        cout << "delete 2 \n";
+                        cout << "delete \n";
                         best_lines.erase(best_lines.begin() + u);
                     }
+                }
+                else
+                {
+                    // TODO (perpendiculaires)
                 }
 
             }
@@ -288,7 +296,6 @@ int main()
                 //TODO
                 // moyenne des pf et pd / les deux vecteurs pareils
                 Vec4i average_segment = average_line(ligne, ligne2);
-
                 best_lines.erase(best_lines.begin() + v);
                 best_lines.erase(best_lines.begin() + u);
 
@@ -299,10 +306,10 @@ int main()
             else if (PdPf_confondue)
             {
                 //TODO
-                // 1 Si collinï¿½aire 
-                // 2 vï¿½rifier les points confondues et creer un nouveau vecteur avec les point restant 
+                // 1 Si collinéaire 
+                // 2 vérifier les points confondues et creer un nouveau vecteur avec les point restant 
 
-                //Sinon rien car supp dans les autres itï¿½rations
+                //Sinon rien car supp dans les autres itérations
             }
             else
             {
@@ -319,7 +326,23 @@ int main()
     imshow("GREY", greyMat);
 
     display_lines(parking_lines, BW_mat);
-    display_lines(best_lines, BW_mat2);
+    //display_lines(best_lines, BW_mat2);
+
+    // 3 et 5 sont sur une même  ligne, un des deux doit etre DEGAGE CE FDP
+
+    cout << "x3 depart = " << best_lines[3][0] << " \n";
+    cout << "y3 depart = " << best_lines[3][1] << " \n";
+    cout << "x3 fin = " << best_lines[3][2] << " \n";
+    cout << "y3 fin = " << best_lines[3][3] << " \n";
+
+    cout << "x5 depart = " << best_lines[5][0] << " \n";
+    cout << "y5 depart = " << best_lines[5][1] << " \n";
+    cout << "x5 fin = " << best_lines[5][2] << " \n";
+    cout << "y5 fin = " << best_lines[5][3] << " \n";
+
+    cout << "depart confondu = " << areSame_startPoint(best_lines[3], best_lines[5], 50) << " \n";
+    cout << "fin confondu = " << areSame_endPoint(best_lines[3], best_lines[5], 50) << " \n";
+    cout << "tout confondu = " << areSame_startEnd_Points(best_lines[3], best_lines[5], 50) << " \n";
 
     imshow("Image parking lines", BW_mat);
     imshow("Image parking best_lines", BW_mat2);
