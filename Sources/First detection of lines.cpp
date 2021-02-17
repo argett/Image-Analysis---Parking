@@ -23,6 +23,19 @@ int  dist(int x, int y)
     }
 }
 
+
+Vec4i average_line(Vec4i seg1, Vec4i seg2)
+{
+    Vec4i average;
+    average[0] = (seg1[0] + seg2[0]) / 2;
+    average[1] = (seg1[1] + seg2[1]) / 2;
+    average[2] = (seg1[2] + seg2[2]) / 2;
+    average[3] = (seg1[3] + seg2[3]) / 2;
+
+    return average;
+}
+
+
 int* point_to_vector(Vec4i segment)
 {
     int* tab = new int[2];
@@ -39,8 +52,8 @@ bool areColinear(int* v1, int* v2)
     float k = (float)v1[0] / (float)v2[0];
 
     // we don t need exactly colinear vectors but more a tendency (+/- 20%)
-    float kmin = k * 0.8;
-    float kmax = k * 1.2;
+    float kmin = k * 0.5;
+    float kmax = k * 1.5;
 
     if (v2[1] * kmin <= v1[1] && v2[1] * kmax >= v1[1])
         return true;
@@ -48,7 +61,7 @@ bool areColinear(int* v1, int* v2)
         return false;
 }
 
-int length(int* vector) 
+int length(int* vector)
 {
     return sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
 }
@@ -69,7 +82,7 @@ int main()
     //------Read Pictures with lines-----///
 
     // Convert to gray-scale
-    Mat greyMat, colorMat;
+    Mat greyMat;
     cvtColor(img, greyMat, cv::COLOR_RGB2GRAY);
 
     // Store the edges   
@@ -111,6 +124,28 @@ int main()
     // Find the edges in the image using canny detector
     Canny(BW_mat, SecondEdges, 200, 255);
 
+    ///////////////////////////TEST//////////////////////////
+
+     // image in black and white only with the lines detected + random white pixels
+    Mat BW_mat2;
+
+    // to erase the cars and keep only the whites lines + random white pixels
+    threshold(greyMat, BW_mat2, 254, 255, THRESH_BINARY);
+
+    // to erase random white pixels
+    erode(BW_mat2, BW_mat2, Mat());
+
+    // to get beautiful lines
+    dilate(BW_mat2, BW_mat2, Mat(), Point(-1, -1), 1);
+
+    // Store the edges   
+    Mat SecondEdges2;
+
+    // Find the edges in the image using canny detector
+    Canny(BW_mat2, SecondEdges2, 200, 255);
+
+    ///////////////////////////FIN TEST///////////////////////
+
     // Create a vector to store lines of the image
     vector<Vec4i> SecondLines;
 
@@ -119,43 +154,31 @@ int main()
     // Apply Second Hough Transform
     HoughLinesP(SecondEdges, SecondLines, 1, CV_PI / 180, 100, 20, 10000);
 
-    for (size_t j = 0; j < SecondLines.size(); j++) {
-
-        Vec4i l = SecondLines[j];
-        line(BW_mat, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255, 0, 0), 3, LINE_AA);
-
-        circle(BW_mat, Point(l[0], l[1]), 2, Scalar(200), 10);
-        circle(BW_mat, Point(l[2], l[3]), 2, Scalar(100, 255, 255), 10);
-    }
-
-    // visualisation des points
-    circle(BW_mat, Point(0, 0), 10, Scalar(100, 255, 255), 10);
-
 
     // ----------- creation of third image ----------------
 
     // To store all lines/points without points in the same near area (we don t know how to delete so we create a new one)
     vector<Vec4i> ThirdLines = SecondLines;
     cout << "longeur = " << ThirdLines.size() << "\n";
-    bool Pd_confondue; 
+    bool Pd_confondue;
     bool Pf_confondue;
     bool PdPf_confondue;
-    
-    // check the points between them to keep only one by line
-    for (size_t u = 0; u < SecondLines.size(); u++) {
 
-        for (size_t v = u; v < SecondLines.size(); v++)
+    // check the points between them to keep only one by line
+    for (size_t u = 0; u < ThirdLines.size() - 1; u++) {
+
+        for (size_t v = u + 1; v < ThirdLines.size(); v++)
         {
-            
+
             Pd_confondue = false;
             Pf_confondue = false;
-            PdPf_confondue = false; 
-            
-            Vec4i ligne = SecondLines[u];
-            Vec4i ligne2 = SecondLines[v];
+            PdPf_confondue = false;
 
+            Vec4i ligne = ThirdLines[u];
+            Vec4i ligne2 = ThirdLines[v];
 
-            int marge_erreur = 20;
+            //Distance max entre deux points pour etre confondues
+            int marge_erreur = 50;
 
             //point x depart ligne 1
             int Pdx1 = ligne[0];
@@ -175,49 +198,74 @@ int main()
             //point y fin ligne 2
             int Pfy2 = ligne2[3];
 
-            
+
             if (dist(Pdx1, Pdx2) < marge_erreur && dist(Pdy1, Pdy2) < marge_erreur)
                 Pd_confondue = true;
-             
+
 
             if (dist(Pfx1, Pfx2) < marge_erreur && dist(Pfy1, Pfy2) < marge_erreur)
                 Pf_confondue = true;
 
-            if(dist(Pdx1, Pfx2) < marge_erreur && dist(Pdy2, Pfy1) < marge_erreur)
+            if (dist(Pdx1, Pfx2) < marge_erreur && dist(Pdy2, Pfy1) < marge_erreur)
                 PdPf_confondue = true;
 
 
             if (Pd_confondue && !Pf_confondue)
             {
+                // 1 check s'ils sont collinéaire + longeur du segment 
+                // 2 si collineaire prendre le plus grand 
+
                 int* Vect1 = point_to_vector(ligne);
                 int* Vect2 = point_to_vector(ligne2);
 
-                if (areColinear(Vect1, Vect2)) 
+                if (areColinear(Vect1, Vect2))
                 {
                     if (length(Vect1) > length(Vect2)) {
-                        // DELETE A MODIFIER
-                        delete &ThirdLines[v];
+
+                        ThirdLines.erase(ThirdLines.begin() + v);
                         cout << "delete \n";
                     }
                     else {
                         cout << "delete \n";
-                        delete &ThirdLines[u];
+                        ThirdLines.erase(ThirdLines.begin() + u);
                     }
                 }
-                //TODO
-                // 1 check s'ils sont collinéaire + longeur du segment 
-                // 2 si collineaire prendre le plus grand 
+
             }
             else if (!Pd_confondue && Pf_confondue)
             {
                 //TODO
                 //1 check s'ils sont collinéaire + longeur du segment 
                 // 2 si collineaire prendre le plus grand 
+
+                int* Vect1 = point_to_vector(ligne);
+                int* Vect2 = point_to_vector(ligne2);
+
+                if (areColinear(Vect1, Vect2))
+                {
+                    if (length(Vect1) > length(Vect2)) {
+
+                        ThirdLines.erase(ThirdLines.begin() + v);
+                        cout << "delete 2 \n";
+                    }
+                    else {
+                        cout << "delete 2 \n";
+                        ThirdLines.erase(ThirdLines.begin() + u);
+                    }
+                }
+
             }
             else if (Pd_confondue && Pf_confondue)
             {
                 //TODO
                 // moyenne des pf et pd / les deux vecteurs pareils
+                Vec4i average_segment = average_line(ligne, ligne2);
+
+                ThirdLines.erase(ThirdLines.begin() + v);
+                ThirdLines.erase(ThirdLines.begin() + u);
+
+                //add to the list
+                ThirdLines.push_back(average_segment);
 
             }
             else if (PdPf_confondue)
@@ -228,26 +276,46 @@ int main()
 
                 //Sinon rien car supp dans les autres itérations
             }
-            else 
+            else
             {
                 //cout << "Julie est contente" << endl;
             }
-            
+
         }
-
-        //Vec4i l = SecondLines[j];
-        //line(BW_mat, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255, 0, 0), 3, LINE_AA);
-
-
     }
 
-    cout << "longeur = " << ThirdLines.size();
+    for (size_t j = 0; j < SecondLines.size(); j++) {
+
+        Vec4i l = SecondLines[j];
+        line(BW_mat, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255, 0, 0), 3, LINE_AA);
+
+        circle(BW_mat, Point(l[0], l[1]), 2, Scalar(200), 10);
+        circle(BW_mat, Point(l[2], l[3]), 2, Scalar(100, 255, 255), 10);
+    }
+
 
     imshow("img", img);
     imshow("GREY", greyMat);
-    imshow("Image parking", BW_mat);
+    imshow("Image parking SeconLines", BW_mat);
 
-    //imshow("Mon Parking Jacky", img);
+
+
+    for (size_t j = 0; j < ThirdLines.size(); j++) {
+
+        Vec4i l = ThirdLines[j];
+        line(BW_mat2, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255, 0, 0), 3, LINE_AA);
+
+        circle(BW_mat2, Point(l[0], l[1]), 2, Scalar(200), 10);
+        circle(BW_mat2, Point(l[2], l[3]), 2, Scalar(100, 255, 255), 10);
+    }
+
+
+    cout << "longeur3 = " << ThirdLines.size() << " \n";
+    cout << "longeur2 = " << SecondLines.size() << " \n";
+
+
+    imshow("Image parking ThirdLines", BW_mat2);
+
 
     waitKey(0); // Wait for any keystroke in the window
     return 0;
