@@ -54,10 +54,6 @@ bool areColinear(int* v1, int* v2)
     float kmin = k * 0.8;
     float kmax = k * 1.2;
 
-    cout << "k = " << k << "\n";
-    cout << "kmin = " << kmin << "\n";
-    cout << "kmax = " << kmax << "\n";
-
     if (v2[1] * kmin >= v1[1] && v2[1] * kmax <= v1[1])
         return true;
     else
@@ -154,15 +150,12 @@ Point intersection(Vec4i l1, Vec4i l2)
 
     float a2 = ((float)l2[3] - (float)l2[1]) / ((float)l2[2] - (float)l2[0]);
     float b2 = (float)l2[1] - (a2 * (float)l2[0]);
-    cout << "a1 = " << a1 << "\n";
-    cout << "a2 = " << a2 << "\n";
-    //we are looking for the intersection point
-     
+
+    //we are looking for the intersection point     
     int x = (b2 - b1) / (a1 - a2);
     int y = (a1 * x) + b1;
     
-    
-    return Point(x, y);
+    return Point(x,y);
 }
 
 
@@ -377,24 +370,31 @@ int main()
         }
         
     }
+
+    Point intersections[50];
+    int cpt = 0;
     for (size_t u = 0; u < best_lines.size() - 1; u++)
     {
-        
-
         for (size_t v = u + 1; v < best_lines.size(); v++)
         {
-            Vec4i ligne = best_lines[u];
-            Vec4i ligne2 = best_lines[v];
-
-
-            if (!AreTrueColinear(point_to_vector(ligne), point_to_vector(ligne2)))
+            if (!AreTrueColinear(point_to_vector(best_lines[u]), point_to_vector(best_lines[v])))
             {
-                //Point intersection = intersection(ligne, ligne2);
-                circle(BW_mat2, intersection(ligne, ligne2), 2, Scalar(100, 255, 255), 10);
-
+                // because some lines are quasi-parallels, we reject intersection at very higth/low position (register the ones in the image only)
+                Point inter = intersection(best_lines[u], best_lines[v]);
+                if ((inter.x < img.size().width && inter.x > 0) && (inter.y < img.size().height && inter.y>0))
+                {
+                    intersections[cpt] = inter;
+                    circle(BW_mat2, intersections[cpt], 2, Scalar(100, 255, 255), 10);
+                    cpt++;
+                }
             }
         }
-        
+    }
+
+    cout << "intersections = \n";
+    for (int aaaaa = 0; aaaaa < 50; aaaaa++)
+    {
+        cout << "x = " << (int)intersections[aaaaa].x << ", y = " << (int)intersections[aaaaa].y << "\n";
     }
 
 
@@ -406,6 +406,15 @@ int main()
 
     display_lines(parking_lines, BW_mat);
     display_lines(best_lines, BW_mat2);
+
+    imshow("Image parking lines - BW_mat", BW_mat);
+    imshow("Image parking best_lines - BW_Mat2", BW_mat2);
+
+
+    waitKey(0); // Wait for any keystroke in the window
+    return 0;
+
+    // test code
     /*
     circle(BW_mat2, Point(best_lines[0][0], best_lines[0][1]), 2, Scalar(100, 255, 255), 10);
     circle(BW_mat2, Point(best_lines[0][2], best_lines[0][3]), 2, 255, 10);
@@ -414,7 +423,7 @@ int main()
     circle(BW_mat2, Point(best_lines[5][2], best_lines[5][3]), 2, 255, 10);
 
     // 3 et 5 sont sur une même  ligne, un des deux doit etre DEGAGE CE FDP
-    
+
     cout << "---------\n";
 
     cout << "x0 depart = " << best_lines[0][0] << " \n";
@@ -426,17 +435,11 @@ int main()
     cout << "y5 depart = " << best_lines[5][1] << " \n";
     cout << "x5 fin = " << best_lines[5][2] << " \n";
     cout << "y5 fin = " << best_lines[5][3] << " \n";
-    
+
     cout << "depart confondu = " << areSame_startPoint(best_lines[0], best_lines[5], 50) << " \n";
     cout << "fin confondu = " << areSame_endPoint(best_lines[0], best_lines[5], 50) << " \n";
     cout << "tout confondu = " << areSame_startEnd_Points(best_lines[0], best_lines[5], 50) << " \n";
     cout << "sont colineaire = " << areColinear(point_to_vector(best_lines[0]), point_to_vector(best_lines[5])) << " \n";
     */
-    imshow("Image parking lines - BW_mat", BW_mat);
-    imshow("Image parking best_lines - BW_Mat2", BW_mat2);
-
-
-    waitKey(0); // Wait for any keystroke in the window
-    return 0;
 }
 
