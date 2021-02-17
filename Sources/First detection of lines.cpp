@@ -61,6 +61,18 @@ bool areColinear(int* v1, int* v2)
         return false;
 }
 
+void display_lines(vector<Vec4i> lines, Mat img) 
+{
+    for (size_t j = 0; j < lines.size(); j++) {
+
+        Vec4i l = lines[j];
+        line(img, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255, 0, 0), 3, LINE_AA);
+
+        circle(img, Point(l[0], l[1]), 2, Scalar(200), 10);
+        circle(img, Point(l[2], l[3]), 2, Scalar(100, 255, 255), 10);
+    }
+}
+
 int length(int* vector)
 {
     return sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
@@ -182,7 +194,7 @@ int main()
 
             //point x depart ligne 1
             int Pdx1 = ligne[0];
-            //point y départ ligne 1
+            //point y dï¿½part ligne 1
             int Pdy1 = ligne[1];
             //point x fin ligne 1
             int Pfx1 = ligne[2];
@@ -191,7 +203,7 @@ int main()
 
             //point x depart ligne 2
             int Pdx2 = ligne2[0];
-            //point y départ ligne 2
+            //point y dï¿½part ligne 2
             int Pdy2 = ligne2[1];
             //point x fin ligne 2
             int Pfx2 = ligne2[2];
@@ -212,7 +224,7 @@ int main()
 
             if (Pd_confondue && !Pf_confondue)
             {
-                // 1 check s'ils sont collinéaire + longeur du segment 
+                // 1 check s'ils sont collinï¿½aire + longeur du segment 
                 // 2 si collineaire prendre le plus grand 
 
                 int* Vect1 = point_to_vector(ligne);
@@ -235,7 +247,7 @@ int main()
             else if (!Pd_confondue && Pf_confondue)
             {
                 //TODO
-                //1 check s'ils sont collinéaire + longeur du segment 
+                //1 check s'ils sont collinï¿½aire + longeur du segment 
                 // 2 si collineaire prendre le plus grand 
 
                 int* Vect1 = point_to_vector(ligne);
@@ -271,10 +283,10 @@ int main()
             else if (PdPf_confondue)
             {
                 //TODO
-                // 1 Si collinéaire 
-                // 2 vérifier les points confondues et creer un nouveau vecteur avec les point restant 
+                // 1 Si collinï¿½aire 
+                // 2 vï¿½rifier les points confondues et creer un nouveau vecteur avec les point restant 
 
-                //Sinon rien car supp dans les autres itérations
+                //Sinon rien car supp dans les autres itï¿½rations
             }
             else
             {
@@ -313,6 +325,8 @@ int main()
     cout << "longeur3 = " << ThirdLines.size() << " \n";
     cout << "longeur2 = " << SecondLines.size() << " \n";
 
+    display_lines(parking_lines, BW_mat);
+    display_lines(best_lines, BW_mat2);
 
     imshow("Image parking ThirdLines", BW_mat2);
 
