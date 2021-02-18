@@ -154,7 +154,7 @@ Point intersection(Vec4i l1, Vec4i l2)
     //we are looking for the intersection point     
     int x = (b2 - b1) / (a1 - a2);
     int y = (a1 * x) + b1;
-    
+
     return Point(x,y);
 }
 
@@ -370,9 +370,18 @@ int main()
         }
 
     }
-    int cpt = 0;
+
+    int Nb_Intersections = 0;
     int lenght = static_cast<int>(best_lines.size());;
-    Point*  intersections = new Point[(lenght/2)];
+    Point*  intersections_points = new Point[(lenght/2)];
+    Vec4i** intersections_lines = (Vec4i**)malloc((lenght/2) * sizeof(Vec4i*));
+    //we creat a 2d array to store the lines that will be sorted
+    for (int i = 0; i < lenght; i++) 
+    {
+        intersections_lines[i] = (Vec4i*)malloc(2 * sizeof(Vec4i));
+    }
+
+    //we find the intersection and put them in an array, we also store the lines that intersect
     for (size_t u = 0; u < best_lines.size() - 1; u++)
     {
         for (size_t v = u + 1; v < best_lines.size(); v++)
@@ -380,22 +389,45 @@ int main()
             if (!AreTrueColinear(point_to_vector(best_lines[u]), point_to_vector(best_lines[v])))
             {
                 // because some lines are quasi-parallels, we reject intersection at very higth/low position (register the ones in the image only)
+                
                 Point inter = intersection(best_lines[u], best_lines[v]);
                 if ((inter.x < img.size().width && inter.x > 0) && (inter.y < img.size().height && inter.y>0))
                 {
-                    intersections[cpt] = inter;
-                    cpt++;
+                    intersections_points[Nb_Intersections] = inter;
+                    //we store the affiliate line in the same position
+                    intersections_lines[Nb_Intersections][0] = best_lines[u];
+                    intersections_lines[Nb_Intersections][1] = best_lines[v];
+
+                    Nb_Intersections++;
                 }
             }
         }
     }
-    Point* final_intersections = new Point[(cpt)];
-    for (int i = 0; i < cpt; i++) 
+
+    //we find the right array with just the lenght we need
+    Point* final_intersections_points = new Point[(Nb_Intersections)];
+    for (int i = 0; i < Nb_Intersections; i++) 
     {
-        final_intersections[i] = intersections[i];
-        //circle(BW_mat2, final_intersections[i], 2, Scalar(100, 255, 255), 10); 
+        final_intersections_points[i] = intersections_points[i];
     }
-    circle(BW_mat2, final_intersections[0], 2, Scalar(100, 255, 255), 10);
+
+    int maxDist = 0;
+    //we want to sort the array of intersection and affiliate lines
+    for (int i = 0; i < Nb_Intersections - 1; i++) 
+    {
+        for (int j = i + 1; j < Nb_Intersections; j++) 
+        {
+            //TODO on doit calculer la distance max possible entre les différentes intersections pour trouver les extrémité
+            //Avec ça on trie les intersections en partant de la gauche vers la droite, on prend a chaque fois l'intersection de cette extrémité (il y en aura qu'une vu que extrémité) et tu la ranges juste aprés
+            //Tu tries aussi la table 2d des lignes affiliées pour que [0] correspond a l'intersection et a ses lignes.
+
+            //Ensuite, une fois les deux array bien triées, on fais un boucle for avec i et i + 1 qui du coup sont deux intersections proche, on calcule le vecteur entre ces deux intersections qui permetra d'identifier la ligne commune a toute les intersections.
+            //Une fois cette ligne trouvé on prend le point de départ ou de fin en fonction du quadrilataire qu'on veut traiter.
+            //Même chose pour le point de l'autre intersection
+        }
+    }
+
+    //circle(BW_mat2, final_intersections_points[0], 2, Scalar(100, 255, 255), 10);
     /*
     cout << "intersections = \n";
     for (int aaaaa = 0; aaaaa <= (lenght/2); aaaaa++)
@@ -423,6 +455,11 @@ int main()
     imshow("Image parking lines - BW_mat", BW_mat);
     imshow("Image parking best_lines - BW_Mat2", BW_mat2);
 
+    for (int i = 0; i < lenght; i++)
+    {
+        free(intersections_lines[i]);
+    }
+    free(intersections_lines);
 
     waitKey(0); // Wait for any keystroke in the window
     return 0;
@@ -454,5 +491,6 @@ int main()
     cout << "tout confondu = " << areSame_startEnd_Points(best_lines[0], best_lines[5], 50) << " \n";
     cout << "sont colineaire = " << areColinear(point_to_vector(best_lines[0]), point_to_vector(best_lines[5])) << " \n";
     */
+    
 }
 
