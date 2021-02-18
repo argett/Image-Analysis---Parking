@@ -243,11 +243,11 @@ int main()
     bool PdPf_confondue;
 
     // check the points between them to keep only one by line
-    for (size_t u = 0; u < best_lines.size() - 1; u++) 
+    for (size_t u = 0; u < best_lines.size() - 1; u++)
     {
         // flag, we repeat the state u n-times to remove all occurencies
         bool allClear = false;
-        while (!allClear) 
+        while (!allClear)
         {
             // by definition, everything is clear, if there is an occurence we put to false
             allClear = true;
@@ -274,12 +274,12 @@ int main()
 
                     if (areColinear(Vect1, Vect2))
                     {
-                        if (length(Vect1) > length(Vect2)) 
+                        if (length(Vect1) > length(Vect2))
                         {
                             best_lines.erase(best_lines.begin() + v);
                             cout << "delete \n";
                         }
-                        else 
+                        else
                         {
                             cout << "delete \n";
                             best_lines.erase(best_lines.begin() + u);
@@ -302,13 +302,13 @@ int main()
 
                     if (areColinear(Vect1, Vect2))
                     {
-                        if (length(Vect1) > length(Vect2)) 
+                        if (length(Vect1) > length(Vect2))
                         {
 
                             best_lines.erase(best_lines.begin() + v);
                             cout << "delete \n";
                         }
-                        else 
+                        else
                         {
                             cout << "delete \n";
                             best_lines.erase(best_lines.begin() + u);
@@ -368,11 +368,11 @@ int main()
 
             }
         }
-        
-    }
 
-    Point intersections[50];
+    }
     int cpt = 0;
+    int lenght = static_cast<int>(best_lines.size());;
+    Point*  intersections = new Point[(lenght/2)];
     for (size_t u = 0; u < best_lines.size() - 1; u++)
     {
         for (size_t v = u + 1; v < best_lines.size(); v++)
@@ -384,18 +384,31 @@ int main()
                 if ((inter.x < img.size().width && inter.x > 0) && (inter.y < img.size().height && inter.y>0))
                 {
                     intersections[cpt] = inter;
-                    circle(BW_mat2, intersections[cpt], 2, Scalar(100, 255, 255), 10);
                     cpt++;
                 }
             }
         }
     }
-
+    Point* final_intersections = new Point[(cpt)];
+    for (int i = 0; i < cpt; i++) 
+    {
+        final_intersections[i] = intersections[i];
+        //circle(BW_mat2, final_intersections[i], 2, Scalar(100, 255, 255), 10); 
+    }
+    circle(BW_mat2, final_intersections[0], 2, Scalar(100, 255, 255), 10);
+    /*
     cout << "intersections = \n";
-    for (int aaaaa = 0; aaaaa < 50; aaaaa++)
+    for (int aaaaa = 0; aaaaa <= (lenght/2); aaaaa++)
     {
         cout << "x = " << (int)intersections[aaaaa].x << ", y = " << (int)intersections[aaaaa].y << "\n";
     }
+
+    cout << "final_intersections = \n";
+    for (int aaaaa = 0; aaaaa < cpt; aaaaa++)
+    {
+        cout << "x = " << (int)final_intersections[aaaaa].x << ", y = " << (int)intersections[aaaaa].y << "\n";
+    }
+    */
 
 
     cout << "2nd line size = " << parking_lines.size() << " \n";
