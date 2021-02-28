@@ -77,8 +77,8 @@ void display_lines(vector<Vec4i> lines, Mat img)
         Vec4i l = lines[j];
         line(img, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255, 0, 0), 3, LINE_AA);
 
-        circle(img, Point(l[0], l[1]), 2, Scalar(200), 10);
-        circle(img, Point(l[2], l[3]), 2, Scalar(100, 255, 255), 10);
+        //circle(img, Point(l[0], l[1]), 2, Scalar(200), 10);
+        //circle(img, Point(l[2], l[3]), 2, Scalar(100, 255, 255), 10);
     }
 }
 
@@ -141,8 +141,6 @@ int length(int* vector)
 
 Point intersection(Vec4i l1, Vec4i l2)
 {
-    int* Vect3 = point_to_vector(l1);
-    int* Vect4 = point_to_vector(l2);
     //we want the equation of the line of type y = ax + b
     float a1 = ((float)l1[3] - (float)l1[1]) / ((float)l1[2] - (float)l1[0]);
     //we use e point of the line to find b
@@ -406,26 +404,131 @@ int main()
 
     //we find the right array with just the lenght we need
     Point* final_intersections_points = new Point[(Nb_Intersections)];
+    //The intersection point where final_intersections_points[extreme_left] has the minimal w
+    int extreme_left = 0;
     for (int i = 0; i < Nb_Intersections; i++) 
     {
         final_intersections_points[i] = intersections_points[i];
+        if (final_intersections_points[i].x <= final_intersections_points[extreme_left].x) {
+            extreme_left = i;
+        }
     }
+    //We sort the extreme_left point as the start of the array
+    Point temp_Inter = final_intersections_points[0];
+    final_intersections_points[0] = final_intersections_points[extreme_left];
+    final_intersections_points[extreme_left] = temp_Inter;
+    //We do the same for the corresponding line array
+    Vec4i* temp_Line = intersections_lines[0];
+    intersections_lines[0] = intersections_lines[extreme_left];
+    intersections_lines[extreme_left] = temp_Line;
 
-    int maxDist = 0;
+   
     //we want to sort the array of intersection and affiliate lines
     for (int i = 0; i < Nb_Intersections - 1; i++) 
     {
+        float minDist = INTMAX_MAX;
+        int minIndex;
         for (int j = i + 1; j < Nb_Intersections; j++) 
         {
-            //TODO on doit calculer la distance max possible entre les différentes intersections pour trouver les extrémité
-            //Avec ça on trie les intersections en partant de la gauche vers la droite, on prend a chaque fois l'intersection de cette extrémité (il y en aura qu'une vu que extrémité) et tu la ranges juste aprés
-            //Tu tries aussi la table 2d des lignes affiliées pour que [0] correspond a l'intersection et a ses lignes.
+            //TODO on doit calculer la distance max possible entre les différentes intersections pour trouver les extrémitées
+            Vec4i temp_Vect;
+            temp_Vect[0] = final_intersections_points[i].x;
+            temp_Vect[1] = final_intersections_points[i].y;
+            temp_Vect[2] = final_intersections_points[j].x;
+            temp_Vect[3] = final_intersections_points[j].y;
 
-            //Ensuite, une fois les deux array bien triées, on fais un boucle for avec i et i + 1 qui du coup sont deux intersections proche, on calcule le vecteur entre ces deux intersections qui permetra d'identifier la ligne commune a toute les intersections.
+            int* vect = point_to_vector(temp_Vect);
+            float dist = length(vect);
+            if (dist < minDist) {
+                minDist = dist;
+                minIndex = j;
+            }
+
+            //Ensuite, une fois les deux array bien triées, on fais un boucle for avec i et i + 1 qui du coup sont deux intersections proche, 
+            //on calcule le vecteur entre ces deux intersections qui permetra d'identifier la ligne commune a toute les intersections.
             //Une fois cette ligne trouvé on prend le point de départ ou de fin en fonction du quadrilataire qu'on veut traiter.
             //Même chose pour le point de l'autre intersection
         }
+        //We sort the array
+        Point temp_Inter = final_intersections_points[i+1];
+        final_intersections_points[i+1] = final_intersections_points[minIndex];
+        final_intersections_points[minIndex] = temp_Inter;
+        //We do the same for the corresponding line array
+        Vec4i* temp_Line = intersections_lines[i+1];
+        intersections_lines[i+1] = intersections_lines[minIndex];
+        intersections_lines[minIndex] = temp_Line;
     }
+    Point** parkingPlaces = (Point**)malloc((Nb_Intersections*2) * sizeof(Point));
+    for (int i = 0; i < Nb_Intersections*2; i++)
+    {
+        parkingPlaces[i] = (Point*)malloc(4 * sizeof(Point));
+    }
+    for (int i = 0; i < Nb_Intersections - 1; i++) 
+    {
+        //We creat a vector between the two intersections
+        Vec4i temp_VectInter;
+        temp_VectInter[0] = final_intersections_points[i].x;
+        temp_VectInter[1] = final_intersections_points[i].y;
+        temp_VectInter[2] = final_intersections_points[i+1].x;
+        temp_VectInter[3] = final_intersections_points[i+1].y;
+        int* vectInter = point_to_vector(temp_VectInter);
+        //I take the two affiliated lines
+        int* vectline1 = point_to_vector(intersections_lines[i][0]);
+        int* vectline2 = point_to_vector(intersections_lines[i][1]);
+
+        //We do the same thing with the second intersection point
+        int* vect2line1 = point_to_vector(intersections_lines[i+1][0]);
+        int* vect2line2 = point_to_vector(intersections_lines[i+1][1]);
+
+        if (areColinear(vectInter, vectline2)) {
+            //We take the start point of the other affiliated line
+            parkingPlaces[i][0] = Point(intersections_lines[i][0][0], intersections_lines[i][0][1]);
+            //We also take the two intersection points
+            parkingPlaces[i][1] = Point(temp_VectInter[0], temp_VectInter[1]);
+            parkingPlaces[i][2] = Point(temp_VectInter[2], temp_VectInter[3]);
+
+            //We do the same thing for the next intersection point
+            parkingPlaces[i+1][0] = Point(intersections_lines[i][0][2], intersections_lines[i][0][3]);
+            parkingPlaces[i+1][1] = Point(temp_VectInter[0], temp_VectInter[1]);
+            parkingPlaces[i+1][2] = Point(temp_VectInter[2], temp_VectInter[3]);
+            if (areColinear(vectInter, vect2line2) )
+            {
+                //We need to find the second start point using the second intersection point
+                parkingPlaces[i][3] = Point(intersections_lines[i+1][0][0], intersections_lines[i+1][0][1]);
+            }
+            else if (areColinear(vectInter, vect2line1))
+            {
+                parkingPlaces[i][3] = Point(intersections_lines[i + 1][1][1], intersections_lines[i + 1][1][1]);
+            }
+        }
+        else if (areColinear(vectInter, vectline1)) {
+            parkingPlaces[i][0] = Point(intersections_lines[i][1][0], intersections_lines[i][1][1]);
+            parkingPlaces[i][1] = Point(temp_VectInter[0], temp_VectInter[1]);
+            parkingPlaces[i][2] = Point(temp_VectInter[2], temp_VectInter[3]);
+
+            parkingPlaces[i + 1][0] = Point(intersections_lines[i][1][2], intersections_lines[i][1][3]);
+            parkingPlaces[i + 1][1] = Point(temp_VectInter[0], temp_VectInter[1]);
+            parkingPlaces[i + 1][2] = Point(temp_VectInter[2], temp_VectInter[3]);
+            if (areColinear(vectInter, vect2line2))
+            {
+                parkingPlaces[i][3] = Point(intersections_lines[i + 1][0][0], intersections_lines[i + 1][0][1]);
+            }
+            else if (areColinear(vectInter, vect2line1))
+            {
+                parkingPlaces[i][3] = Point(intersections_lines[i + 1][1][1], intersections_lines[i + 1][1][1]);
+            }
+        }
+        else {
+            cout << "on a un problème d'ordre \n";
+        }
+
+    }
+    //for (int i = 0; i < Nb_Intersections - 1; i++) {
+        for (int j = 0; j < 4; j++) {
+            circle(BW_mat2, parkingPlaces[0][j], 2, Scalar(100, 255, 255), 10);
+        }
+        
+    //}
 
     //circle(BW_mat2, final_intersections_points[0], 2, Scalar(100, 255, 255), 10);
     /*
@@ -455,11 +558,11 @@ int main()
     imshow("Image parking lines - BW_mat", BW_mat);
     imshow("Image parking best_lines - BW_Mat2", BW_mat2);
 
-    for (int i = 0; i < lenght; i++)
+    /*for (int i = 0; i < lenght; i++)
     {
         free(intersections_lines[i]);
     }
-    free(intersections_lines);
+    free(intersections_lines);*/
 
     waitKey(0); // Wait for any keystroke in the window
     return 0;
