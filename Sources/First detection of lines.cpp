@@ -83,9 +83,6 @@ void display_lines(vector<Vec4i> lines, Mat img)
 
         Vec4i l = lines[j];
         line(img, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255, 0, 0), 3, LINE_AA);
-
-        //circle(img, Point(l[0], l[1]), 2, Scalar(200), 10);
-        //circle(img, Point(l[2], l[3]), 2, Scalar(100, 255, 255), 10);
     }
 }
 
@@ -168,6 +165,7 @@ int main()
 {
     //read the image file
     Mat img = imread("./Images/parking3.jpg");
+    int imgWidth = img.cols;
 
     if (img.empty()) // Check for failure
     {
@@ -242,7 +240,6 @@ int main()
 
     // To store all lines/points without points in the same near area (we don t know how to delete so we create a new one)
     vector<Vec4i> best_lines = parking_lines;
-    cout << "longeur = " << best_lines.size() << "\n";
     bool Pd_confondue;
     bool Pf_confondue;
     bool PdPf_confondue;
@@ -463,8 +460,9 @@ int main()
         intersections_lines[minIndex] = temp_Line;
     }
 
-    Point** parkingPlaces = (Point**)malloc((Nb_Intersections) * sizeof(Point));
-    for (int i = 0; i < Nb_Intersections * 2; i++)
+    //(Nb_Intersections - 1) * 2 represent the number of parking places
+    Point** parkingPlaces = (Point**)malloc(((Nb_Intersections-1) *2) * sizeof(Point));
+    for (int i = 0; i < (Nb_Intersections-1) * 2; i++)
     {
         parkingPlaces[i] = (Point*)malloc(4 * sizeof(Point));
     }
@@ -565,56 +563,59 @@ int main()
     //----------------    We are going to check from the diagonal intersection of the square    -----------------------------------
 
     //We search the color of the background
-    int** Colors = (int**)malloc(img.cols * sizeof(int*));
-    for (int i = 0; i < img.cols; i++)
+    int** Colors;
+    Colors = (int**)malloc(imgWidth * sizeof(int*));
+    for (int i = 0; i < imgWidth; i++)
     {
         Colors[i] = (int*)malloc(3 * sizeof(int));
     }
 
     //We register the pixel's color of the first line to select the mediane value
-    for (int x = 0; x < img.cols; x++) {
+    for (int x = 0; x < imgWidth; x++) {
         //Vec3b store the color in BGR
-        Vec3b pixel = img.at<Vec3b>(0, x); //lecture du pixel 
+        Vec3b pixel = img.at<Vec3b>(0, x);
         Colors[x][0] = pixel[0];
         Colors[x][1] = pixel[1];
         Colors[x][2] = pixel[2];
     }
+
     //Now we sort the Colors array
     //On est pas sur que la mediane des composante de la couleur recomposée donne comme résultat la mediane des couleurs mais on est dans un cas parfait donc on en reste la
-    for (int a = 0; a < sizeof(Colors) - 1; a++) {
-        for (int b = a + 1; b < sizeof(Colors); b++) {
+    for (int a = 0; a < imgWidth - 1; a++) {
+        for (int b = a + 1; b < imgWidth; b++) {
+            // Blue
             if (Colors[a][0] > Colors[b][0]) {
                 int temp = Colors[a][0];
                 Colors[a][0] = Colors[b][0];
                 Colors[b][0] = temp;
-
             }
+            // Green
             if (Colors[a][1] > Colors[b][1]) {
                 int temp = Colors[a][1];
                 Colors[a][1] = Colors[b][1];
                 Colors[b][1] = temp;
-
             }
+            // Red
             if (Colors[a][2] > Colors[b][2]) {
                 int temp = Colors[a][2];
                 Colors[a][2] = Colors[b][2];
                 Colors[b][2] = temp;
-
             }
         }
     }
-    //We take the median in BGR
-    int* colorMedian = new int[3];
-    colorMedian[0] = Colors[sizeof(Colors) / 2][0];
-    colorMedian[1] = Colors[sizeof(Colors) / 2][1];
-    colorMedian[2] = Colors[sizeof(Colors) / 2][2];
 
+    //We take the median in BGR
+    int colorMedian[3];
+    colorMedian[0] = Colors[imgWidth / 2][0];
+    colorMedian[1] = Colors[imgWidth / 2][1];
+    colorMedian[2] = Colors[imgWidth / 2][2];
+
+    //(Nb_Intersections-1)*2 represent the number of parking places
+    int Nb_totalPlaces = (Nb_Intersections - 1) * 2;
     int MarginColor_error = 10;
     bool flag = false;
-    int Nb_totalPlaces = (Nb_Intersections - 1) * 2;
     int Nb_takenPlaces = 0;
 
-    //Nb_Intersections-1)*2 represent the number of parking places
     for (int i = 0; i < (Nb_Intersections - 1) * 2; i++)
     {
         Vec4i diagonal1;
@@ -629,12 +630,12 @@ int main()
         diagonal2[2] = parkingPlaces[i][3].x;
         diagonal2[3] = parkingPlaces[i][3].y;
 
-        //Point middle = intersection(diagonal1, diagonal2);
-       // circle(img, middle, 2, Scalar(0, 0, 0), 10);
+        Point middle = intersection(diagonal1, diagonal2);
+        circle(img, middle, 2, Scalar(0, 0, 0), 10);
 
         for (int m = -3; m < 4; m++) {
             for (int n = -3; n < 4; n++) {
-                //Vec3b pixel_temp = img.at<Vec3b>(middle.y + n, middle.x+ m);
+                Vec3b pixel_temp = img.at<Vec3b>(middle.y + n, middle.x+ m);
                 //We compare the two pixel with an error margin
                 /*
                 cout << "color median :"<< colorMedian[0] << "\n" ;
@@ -642,16 +643,14 @@ int main()
                 cout << "color temp :" << (float)pixel_temp[1] << "\n";
                 cout << "color temp :" << (float)pixel_temp[2] << "\n";
                 */
-                /*
+
                 if (!(float)pixel_temp[0] >= (float)colorMedian[0] - MarginColor_error && !(float)pixel_temp[0] <= (float)colorMedian[0] + MarginColor_error) {
-                    cout << "coucou pute\n";
                     if (!(float)pixel_temp[1] >= (float)colorMedian[1] - MarginColor_error && !(float)pixel_temp[1] <= (float)colorMedian[1] + MarginColor_error) {
                         if (!(float)pixel_temp[2] >= (float)colorMedian[2] - MarginColor_error && !(float)pixel_temp[2] <= (float)colorMedian[2] + MarginColor_error) {
                             flag = true;
                         }
                     }
                 }
-                */
             }
         }
         if (flag) {
@@ -662,13 +661,7 @@ int main()
     cout << "il y a : " << Nb_totalPlaces << " places dont " << Nb_takenPlaces << " prises \n";
 
 
-    for (int i = 0; i < (Nb_Intersections - 1) * 2; i++) {
-        for (int j = 0; j < 4; j++) {
-            circle(img, parkingPlaces[i][j], 2, Scalar(0, 0, 0), 10);
-        }
-    }
-
-    //circle(BW_mat2, final_intersections_points[0], 2, Scalar(100, 255, 255), 10);
+    //circle(BW_mat2, final_intersections_points[0], 2, new Scalar(100, 255, 255), 10);
     /*
     cout << "intersections = \n";
     for (int aaaaa = 0; aaaaa <= (lenght/2); aaaaa++)
@@ -683,10 +676,6 @@ int main()
     }
     */
 
-
-    cout << "2nd line size = " << parking_lines.size() << " \n";
-    cout << "3rd line size = " << best_lines.size() << " \n";
-
     imshow("img", img);
     imshow("GREY", greyMat);
 
@@ -696,21 +685,21 @@ int main()
     imshow("Image parking lines - BW_mat", BW_mat);
     imshow("Image parking best_lines - BW_Mat2", BW_mat2);
 
-    /*for (int i = 0; i < lenght; i++)
+    for (int i = 0; i < lenght; i++)
     {
         free(intersections_lines[i]);
     }
-    free(intersections_lines);*/
+    free(intersections_lines);
 
     waitKey(0); // Wait for any keystroke in the window
     return 0;
 
     // test code
     /*
-    circle(BW_mat2, Point(best_lines[0][0], best_lines[0][1]), 2, Scalar(100, 255, 255), 10);
+    circle(BW_mat2, Point(best_lines[0][0], best_lines[0][1]), 2, new Scalar(100, 255, 255), 10);
     circle(BW_mat2, Point(best_lines[0][2], best_lines[0][3]), 2, 255, 10);
 
-    circle(BW_mat2, Point(best_lines[5][0], best_lines[5][1]), 2, Scalar(100, 255, 255), 10);
+    circle(BW_mat2, Point(best_lines[5][0], best_lines[5][1]), 2, new Scalar(100, 255, 255), 10);
     circle(BW_mat2, Point(best_lines[5][2], best_lines[5][3]), 2, 255, 10);
 
     // 3 et 5 sont sur une m�me  ligne, un des deux doit etre DEGAGE CE FDP
