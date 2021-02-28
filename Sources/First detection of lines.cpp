@@ -468,23 +468,30 @@ int main()
     {
         parkingPlaces[i] = (Point*)malloc(4 * sizeof(Point));
     }
+    
 
     //Ensuite, une fois les deux array bien tri�es, on fais un boucle for avec i et i + 1 qui du coup sont deux intersections proche, 
     //on calcule le vecteur entre ces deux intersections qui permetra d'identifier la ligne commune a toute les intersections.
     //Une fois cette ligne trouv� on prend le point de d�part ou de fin en fonction du quadrilataire qu'on veut traiter.
     //M�me chose pour le point de l'autre intersection
-
+    int ParkingPlaceindex = 0;
+    /*
+    0 | 2 | 4 ...
+    -------------
+    1 | 3 | 5 ...
+    */
     for (int i = 0; i < Nb_Intersections - 1; i++) 
     {
         //We creat a vector between the two intersections
         Vec4i temp_VectInter;
         temp_VectInter[0] = final_intersections_points[i].x;
         temp_VectInter[1] = final_intersections_points[i].y;
-        temp_VectInter[2] = final_intersections_points[i+1].x;
-        temp_VectInter[3] = final_intersections_points[i+1].y;
+        temp_VectInter[2] = final_intersections_points[i + 1].x;
+        temp_VectInter[3] = final_intersections_points[i + 1].y;
         int* vectInter = point_to_vector(temp_VectInter);
 
         //I take the two affiliated lines
+        //intersection lines[i][one of the 2 lines which create the intersection][x/y of point 1, x/y of point 2]
         int* vectline1 = point_to_vector(intersections_lines[i][0]);
         int* vectline2 = point_to_vector(intersections_lines[i][1]);
 
@@ -492,50 +499,68 @@ int main()
         int* vect2line1 = point_to_vector(intersections_lines[i+1][0]);
         int* vect2line2 = point_to_vector(intersections_lines[i+1][1]);
 
-        if (areColinear(vectInter, vectline2)) 
+        if (areColinear(vectInter, vectline2))
         {
             //We take the start point of the other affiliated line
-            parkingPlaces[i][0] = Point(intersections_lines[i][0][0], intersections_lines[i][0][1]);
+            //The representation of the array parkingPlaces[i][0/1/2/3], each number represent a point a the square 
+            /*
+            |0  2|
+            |1  3|
+            ------
+            */
+            parkingPlaces[ParkingPlaceindex][0] = Point(intersections_lines[i][0][0], intersections_lines[i][0][1]);
 
             //We also take the two intersection points
-            parkingPlaces[i][1] = Point(temp_VectInter[0], temp_VectInter[1]);
-            parkingPlaces[i][2] = Point(temp_VectInter[2], temp_VectInter[3]);
-
-            //We do the same thing for the next intersection point
-            parkingPlaces[i+1][0] = Point(intersections_lines[i][0][2], intersections_lines[i][0][3]);
-            parkingPlaces[i+1][1] = Point(temp_VectInter[0], temp_VectInter[1]);
-            parkingPlaces[i+1][2] = Point(temp_VectInter[2], temp_VectInter[3]);
+            parkingPlaces[ParkingPlaceindex][1] = Point(temp_VectInter[0], temp_VectInter[1]);
+            parkingPlaces[ParkingPlaceindex][2] = Point(temp_VectInter[2], temp_VectInter[3]);
 
             //We need to find the second start point using the second intersection point
-            if (areColinear(vectInter, vect2line2) )
-                parkingPlaces[i][3] = Point(intersections_lines[i+1][0][0], intersections_lines[i+1][0][1]);
-            else if (areColinear(vectInter, vect2line1))
-                parkingPlaces[i][3] = Point(intersections_lines[i + 1][1][1], intersections_lines[i + 1][1][1]);
+            if (areColinear(vectInter, vect2line2)){
+                parkingPlaces[ParkingPlaceindex][3] = Point(intersections_lines[i + 1][0][0], intersections_lines[i + 1][0][1]);
+                parkingPlaces[ParkingPlaceindex + 1][3] = Point(intersections_lines[i + 1][0][2], intersections_lines[i + 1][0][3]);
+            }
+            else if (areColinear(vectInter, vect2line1)) {
+                parkingPlaces[ParkingPlaceindex][3] = Point(intersections_lines[i + 1][1][1], intersections_lines[i + 1][1][1]);
+                parkingPlaces[ParkingPlaceindex + 1][3] = Point(intersections_lines[i+1][1][2], intersections_lines[i+1][1][3]);
+            }
+            //We do the same thing for the next intersection point
+            parkingPlaces[ParkingPlaceindex + 1][0] = Point(intersections_lines[i][0][2], intersections_lines[i][0][3]);
+            parkingPlaces[ParkingPlaceindex + 1][1] = Point(temp_VectInter[0], temp_VectInter[1]);
+            parkingPlaces[ParkingPlaceindex + 1][2] = Point(temp_VectInter[2], temp_VectInter[3]);
+                
         }
         else if (areColinear(vectInter, vectline1)) 
         {
-            parkingPlaces[i][0] = Point(intersections_lines[i][1][0], intersections_lines[i][1][1]);
-            parkingPlaces[i][1] = Point(temp_VectInter[0], temp_VectInter[1]);
-            parkingPlaces[i][2] = Point(temp_VectInter[2], temp_VectInter[3]);
+            parkingPlaces[ParkingPlaceindex][0] = Point(intersections_lines[i][1][0], intersections_lines[i][1][1]);
+            parkingPlaces[ParkingPlaceindex][1] = Point(temp_VectInter[0], temp_VectInter[1]);
+            parkingPlaces[ParkingPlaceindex][2] = Point(temp_VectInter[2], temp_VectInter[3]);
 
-            parkingPlaces[i + 1][0] = Point(intersections_lines[i][1][2], intersections_lines[i][1][3]);
-            parkingPlaces[i + 1][1] = Point(temp_VectInter[0], temp_VectInter[1]);
-            parkingPlaces[i + 1][2] = Point(temp_VectInter[2], temp_VectInter[3]);
+            
 
-            if (areColinear(vectInter, vect2line2))
-                parkingPlaces[i][3] = Point(intersections_lines[i + 1][0][0], intersections_lines[i + 1][0][1]);
-            else if (areColinear(vectInter, vect2line1))
-                parkingPlaces[i][3] = Point(intersections_lines[i + 1][1][1], intersections_lines[i + 1][1][1]);
+            if (areColinear(vectInter, vect2line2)) {
+                parkingPlaces[ParkingPlaceindex][3] = Point(intersections_lines[i + 1][0][0], intersections_lines[i + 1][0][1]);
+                parkingPlaces[ParkingPlaceindex + 1][3] = Point(intersections_lines[i + 1][0][2], intersections_lines[i + 1][0][3]);
+            }
+            else if (areColinear(vectInter, vect2line1)) {
+                parkingPlaces[ParkingPlaceindex][3] = Point(intersections_lines[i + 1][1][1], intersections_lines[i + 1][1][1]);
+                parkingPlaces[ParkingPlaceindex + 1][3] = Point(intersections_lines[i + 1][1][2], intersections_lines[i + 1][1][3]);
+            }  
+
+            parkingPlaces[ParkingPlaceindex + 1][0] = Point(intersections_lines[i][1][2], intersections_lines[i][1][3]);
+            parkingPlaces[ParkingPlaceindex + 1][1] = Point(temp_VectInter[0], temp_VectInter[1]);
+            parkingPlaces[ParkingPlaceindex + 1][2] = Point(temp_VectInter[2], temp_VectInter[3]);
         }
         else {
-            cout << "on a un probl�me d'ordre \n";
+            cout << "on a un probleme d'ordre \n";
         }
+        ParkingPlaceindex +=2;
     }
 
 
-    //for (int i = 0; i < Nb_Intersections - 1; i++) {
+    //for (int i = ; i <; i++) {
         for (int j = 0; j < 4; j++) {
-            circle(BW_mat2, parkingPlaces[0][j], 2, Scalar(100, 255, 255), 10);
+            cout << parkingPlaces[2][j] << "\n";
+            circle(BW_mat2, parkingPlaces[2][j], 2, Scalar(100, 255, 255), 10);
         }
         
     //}
