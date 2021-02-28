@@ -77,7 +77,7 @@ bool AreTrueColinear(int* v1, int* v2)
         return false;
 }
 
-void display_lines(vector<Vec4i> lines, Mat img) 
+void display_lines(vector<Vec4i> lines, Mat img)
 {
     for (size_t j = 0; j < lines.size(); j++) {
 
@@ -160,7 +160,7 @@ Point intersection(Vec4i l1, Vec4i l2)
     int x = (b2 - b1) / (a1 - a2);
     int y = (a1 * x) + b1;
 
-    return Point(x,y);
+    return Point(x, y);
 }
 
 
@@ -193,7 +193,7 @@ int main()
 
     // Apply First Hough Transform
     HoughLinesP(FirstEdges, all_lines, 1, CV_PI / 180, 100, 20, 20);
-    for (size_t i = 0; i < all_lines.size(); i++) 
+    for (size_t i = 0; i < all_lines.size(); i++)
     {
         Vec4i l = all_lines[i];
         line(greyMat, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255, 0, 0), 3, LINE_AA);
@@ -217,7 +217,7 @@ int main()
     // Find the edges in the image using canny detector, every pixel with color < 200 is black
     Canny(BW_mat, SecondEdges, 200, 255);
 
-     // image in black and white only with the lines detected + random white pixels
+    // image in black and white only with the lines detected + random white pixels
     Mat BW_mat2;
 
     // to erase the cars and keep only the whites lines + random white pixels
@@ -378,11 +378,11 @@ int main()
 
     int Nb_Intersections = 0;
     int lenght = static_cast<int>(best_lines.size());;
-    Point*  intersections_points = new Point[lenght];
+    Point* intersections_points = new Point[lenght];
     Vec4i** intersections_lines = (Vec4i**)malloc(lenght * sizeof(Vec4i*));
 
     //we creat a 2d array to store the lines that will be sorted
-    for (int i = 0; i < lenght; i++) 
+    for (int i = 0; i < lenght; i++)
     {
         intersections_lines[i] = (Vec4i*)malloc(2 * sizeof(Vec4i));
     }
@@ -414,7 +414,7 @@ int main()
     Point* final_intersections_points = new Point[(Nb_Intersections)];
     //The intersection point where final_intersections_points[extreme_left] has the minimal X
     int extreme_left = 0;
-    for (int i = 0; i < Nb_Intersections; i++) 
+    for (int i = 0; i < Nb_Intersections; i++)
     {
         final_intersections_points[i] = intersections_points[i];
         if (final_intersections_points[i].x <= final_intersections_points[extreme_left].x) {
@@ -430,13 +430,13 @@ int main()
     Vec4i* temp_Line = intersections_lines[0];
     intersections_lines[0] = intersections_lines[extreme_left];
     intersections_lines[extreme_left] = temp_Line;
-   
+
     //we want to sort the array of intersection and affiliate lines
-    for (int i = 0; i < Nb_Intersections - 1; i++) 
+    for (int i = 0; i < Nb_Intersections - 1; i++)
     {
         float minDist = INTMAX_MAX;
         int minIndex;
-        for (int j = i + 1; j < Nb_Intersections; j++) 
+        for (int j = i + 1; j < Nb_Intersections; j++)
         {
             // We compute the max distance possible between the differents intersections to find the extremities
             Vec4i temp_Vect;
@@ -454,21 +454,21 @@ int main()
         }
 
         //We sort the array
-        Point temp_Inter = final_intersections_points[i+1];
-        final_intersections_points[i+1] = final_intersections_points[minIndex];
+        Point temp_Inter = final_intersections_points[i + 1];
+        final_intersections_points[i + 1] = final_intersections_points[minIndex];
         final_intersections_points[minIndex] = temp_Inter;
         //We do the same for the corresponding line array
-        Vec4i* temp_Line = intersections_lines[i+1];
-        intersections_lines[i+1] = intersections_lines[minIndex];
+        Vec4i* temp_Line = intersections_lines[i + 1];
+        intersections_lines[i + 1] = intersections_lines[minIndex];
         intersections_lines[minIndex] = temp_Line;
     }
 
     Point** parkingPlaces = (Point**)malloc((Nb_Intersections) * sizeof(Point));
-    for (int i = 0; i < Nb_Intersections*2; i++)
+    for (int i = 0; i < Nb_Intersections * 2; i++)
     {
         parkingPlaces[i] = (Point*)malloc(4 * sizeof(Point));
     }
-    
+
 
     //Ensuite, une fois les deux array bien tri�es, on fais un boucle for avec i et i + 1 qui du coup sont deux intersections proche, 
     //on calcule le vecteur entre ces deux intersections qui permetra d'identifier la ligne commune a toute les intersections.
@@ -480,7 +480,7 @@ int main()
     -------------
     1 | 3 | 5 ...
     */
-    for (int i = 0; i < Nb_Intersections - 1; i++) 
+    for (int i = 0; i < Nb_Intersections - 1; i++)
     {
         //We creat a vector between the two intersections
         Vec4i temp_VectInter;
@@ -496,8 +496,8 @@ int main()
         int* vectline2 = point_to_vector(intersections_lines[i][1]);
 
         //We do the same thing with the second intersection point
-        int* vect2line1 = point_to_vector(intersections_lines[i+1][0]);
-        int* vect2line2 = point_to_vector(intersections_lines[i+1][1]);
+        int* vect2line1 = point_to_vector(intersections_lines[i + 1][0]);
+        int* vect2line2 = point_to_vector(intersections_lines[i + 1][1]);
 
         if (areColinear(vectInter, vectline2))
         {
@@ -515,14 +515,14 @@ int main()
             parkingPlaces[ParkingPlaceindex][2] = Point(temp_VectInter[2], temp_VectInter[3]);
 
             //We need to find the second start point using the second intersection point
-            if (areColinear(vectInter, vect2line2)){
+            if (areColinear(vectInter, vect2line2)) {
                 parkingPlaces[ParkingPlaceindex][3] = Point(intersections_lines[i + 1][0][0], intersections_lines[i + 1][0][1]);
                 //Here we take the second end point
                 parkingPlaces[ParkingPlaceindex + 1][3] = Point(intersections_lines[i + 1][0][2], intersections_lines[i + 1][0][3]);
             }
             else if (areColinear(vectInter, vect2line1)) {
                 parkingPlaces[ParkingPlaceindex][3] = Point(intersections_lines[i + 1][1][1], intersections_lines[i + 1][1][1]);
-                parkingPlaces[ParkingPlaceindex + 1][3] = Point(intersections_lines[i+1][1][2], intersections_lines[i+1][1][3]);
+                parkingPlaces[ParkingPlaceindex + 1][3] = Point(intersections_lines[i + 1][1][2], intersections_lines[i + 1][1][3]);
             }
             //We do the same thing using the ends point to find the other place using the same lines and intersections 
             /*
@@ -533,15 +533,15 @@ int main()
             parkingPlaces[ParkingPlaceindex + 1][0] = Point(intersections_lines[i][0][2], intersections_lines[i][0][3]);
             parkingPlaces[ParkingPlaceindex + 1][1] = Point(temp_VectInter[0], temp_VectInter[1]);
             parkingPlaces[ParkingPlaceindex + 1][2] = Point(temp_VectInter[2], temp_VectInter[3]);
-                
+
         }
-        else if (areColinear(vectInter, vectline1)) 
+        else if (areColinear(vectInter, vectline1))
         {
             parkingPlaces[ParkingPlaceindex][0] = Point(intersections_lines[i][1][0], intersections_lines[i][1][1]);
             parkingPlaces[ParkingPlaceindex][1] = Point(temp_VectInter[0], temp_VectInter[1]);
             parkingPlaces[ParkingPlaceindex][2] = Point(temp_VectInter[2], temp_VectInter[3]);
 
-            
+
 
             if (areColinear(vectInter, vect2line2)) {
                 parkingPlaces[ParkingPlaceindex][3] = Point(intersections_lines[i + 1][0][0], intersections_lines[i + 1][0][1]);
@@ -550,7 +550,7 @@ int main()
             else if (areColinear(vectInter, vect2line1)) {
                 parkingPlaces[ParkingPlaceindex][3] = Point(intersections_lines[i + 1][1][1], intersections_lines[i + 1][1][1]);
                 parkingPlaces[ParkingPlaceindex + 1][3] = Point(intersections_lines[i + 1][1][2], intersections_lines[i + 1][1][3]);
-            }  
+            }
 
             parkingPlaces[ParkingPlaceindex + 1][0] = Point(intersections_lines[i][1][2], intersections_lines[i][1][3]);
             parkingPlaces[ParkingPlaceindex + 1][1] = Point(temp_VectInter[0], temp_VectInter[1]);
@@ -559,9 +559,9 @@ int main()
         else {
             cout << "on a un probleme d'ordre \n";
         }
-        ParkingPlaceindex +=2;
+        ParkingPlaceindex += 2;
     }
-   
+
     //----------------    We are going to check from the diagonal intersection of the square    -----------------------------------
 
     //We search the color of the background
@@ -574,14 +574,14 @@ int main()
     //We register the pixel's color of the first line to select the mediane value
     for (int x = 0; x < img.cols; x++) {
         //Vec3b store the color in BGR
-        Vec3b pixel = img.at<Vec3b>(0,x); //lecture du pixel 
+        Vec3b pixel = img.at<Vec3b>(0, x); //lecture du pixel 
         Colors[x][0] = pixel[0];
         Colors[x][1] = pixel[1];
         Colors[x][2] = pixel[2];
     }
     //Now we sort the Colors array
     //On est pas sur que la mediane des composante de la couleur recomposée donne comme résultat la mediane des couleurs mais on est dans un cas parfait donc on en reste la
-    for (int a = 0;a<sizeof(Colors)-1;a++) {
+    for (int a = 0; a < sizeof(Colors) - 1; a++) {
         for (int b = a + 1; b < sizeof(Colors); b++) {
             if (Colors[a][0] > Colors[b][0]) {
                 int temp = Colors[a][0];
@@ -608,13 +608,14 @@ int main()
     colorMedian[0] = Colors[sizeof(Colors) / 2][0];
     colorMedian[1] = Colors[sizeof(Colors) / 2][1];
     colorMedian[2] = Colors[sizeof(Colors) / 2][2];
-   
+
     int MarginColor_error = 10;
     bool flag = false;
     int Nb_totalPlaces = (Nb_Intersections - 1) * 2;
     int Nb_takenPlaces = 0;
+
     //Nb_Intersections-1)*2 represent the number of parking places
-    for (int i = 0; i < (Nb_Intersections-1)*2;i++)
+    for (int i = 0; i < (Nb_Intersections - 1) * 2; i++)
     {
         Vec4i diagonal1;
         diagonal1[0] = parkingPlaces[i][0].x;
@@ -627,21 +628,30 @@ int main()
         diagonal2[1] = parkingPlaces[i][1].y;
         diagonal2[2] = parkingPlaces[i][3].x;
         diagonal2[3] = parkingPlaces[i][3].y;
-        
-        Point middle = intersection(diagonal1, diagonal2);
-        circle(img, middle, 2, Scalar(0, 0, 0), 10);
+
+        //Point middle = intersection(diagonal1, diagonal2);
+       // circle(img, middle, 2, Scalar(0, 0, 0), 10);
+
         for (int m = -3; m < 4; m++) {
             for (int n = -3; n < 4; n++) {
-                Vec3b pixel_temp = img.at<Vec3b>(middle.y + m, middle.x + n);
+                //Vec3b pixel_temp = img.at<Vec3b>(middle.y + n, middle.x+ m);
                 //We compare the two pixel with an error margin
-                if (!pixel_temp[0] >= colorMedian[0]- MarginColor_error && !pixel_temp[0] <= colorMedian[0]+ MarginColor_error) {
+                /*
+                cout << "color median :"<< colorMedian[0] << "\n" ;
+                cout << "color temp :" << (float)pixel_temp[0] << "\n";
+                cout << "color temp :" << (float)pixel_temp[1] << "\n";
+                cout << "color temp :" << (float)pixel_temp[2] << "\n";
+                */
+                /*
+                if (!(float)pixel_temp[0] >= (float)colorMedian[0] - MarginColor_error && !(float)pixel_temp[0] <= (float)colorMedian[0] + MarginColor_error) {
                     cout << "coucou pute\n";
-                    if (!pixel_temp[1] >= colorMedian[1] - MarginColor_error && !pixel_temp[1] <= colorMedian[1] + MarginColor_error) {
-                        if (!pixel_temp[2] >= colorMedian[2] - MarginColor_error && !pixel_temp[2] <= colorMedian[2] + MarginColor_error) {
+                    if (!(float)pixel_temp[1] >= (float)colorMedian[1] - MarginColor_error && !(float)pixel_temp[1] <= (float)colorMedian[1] + MarginColor_error) {
+                        if (!(float)pixel_temp[2] >= (float)colorMedian[2] - MarginColor_error && !(float)pixel_temp[2] <= (float)colorMedian[2] + MarginColor_error) {
                             flag = true;
                         }
                     }
                 }
+                */
             }
         }
         if (flag) {
@@ -652,11 +662,10 @@ int main()
     cout << "il y a : " << Nb_totalPlaces << " places dont " << Nb_takenPlaces << " prises \n";
 
 
-    for (int i = 0; i <(Nb_Intersections-1)*2; i++) {
+    for (int i = 0; i < (Nb_Intersections - 1) * 2; i++) {
         for (int j = 0; j < 4; j++) {
             circle(img, parkingPlaces[i][j], 2, Scalar(0, 0, 0), 10);
         }
-        
     }
 
     //circle(BW_mat2, final_intersections_points[0], 2, Scalar(100, 255, 255), 10);
@@ -723,6 +732,6 @@ int main()
     cout << "tout confondu = " << areSame_startEnd_Points(best_lines[0], best_lines[5], 50) << " \n";
     cout << "sont colineaire = " << areColinear(point_to_vector(best_lines[0]), point_to_vector(best_lines[5])) << " \n";
     */
-    
+
 }
 
