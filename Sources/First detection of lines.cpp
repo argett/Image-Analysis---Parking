@@ -517,13 +517,19 @@ int main()
             //We need to find the second start point using the second intersection point
             if (areColinear(vectInter, vect2line2)){
                 parkingPlaces[ParkingPlaceindex][3] = Point(intersections_lines[i + 1][0][0], intersections_lines[i + 1][0][1]);
+                //Here we take the second end point
                 parkingPlaces[ParkingPlaceindex + 1][3] = Point(intersections_lines[i + 1][0][2], intersections_lines[i + 1][0][3]);
             }
             else if (areColinear(vectInter, vect2line1)) {
                 parkingPlaces[ParkingPlaceindex][3] = Point(intersections_lines[i + 1][1][1], intersections_lines[i + 1][1][1]);
                 parkingPlaces[ParkingPlaceindex + 1][3] = Point(intersections_lines[i+1][1][2], intersections_lines[i+1][1][3]);
             }
-            //We do the same thing for the next intersection point
+            //We do the same thing using the ends point to find the other place using the same lines and intersections 
+            /*
+            |ParkingPlaceindex|
+            ---------------------
+            |ParkingPlaceindex+1|
+            */
             parkingPlaces[ParkingPlaceindex + 1][0] = Point(intersections_lines[i][0][2], intersections_lines[i][0][3]);
             parkingPlaces[ParkingPlaceindex + 1][1] = Point(temp_VectInter[0], temp_VectInter[1]);
             parkingPlaces[ParkingPlaceindex + 1][2] = Point(temp_VectInter[2], temp_VectInter[3]);
