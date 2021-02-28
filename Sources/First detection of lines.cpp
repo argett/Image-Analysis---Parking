@@ -8,6 +8,13 @@ using namespace cv;
 using namespace std;
 
 
+/*
+
+    The image must contain only one big white line with a lot of shorts perpendiculars to it
+    The background must be more or less at the same color
+
+*/
+
 
 int  dist(int x, int y)
 {
@@ -86,12 +93,12 @@ bool areSame_startPoint(Vec4i l1, Vec4i l2, int margin_error)
 {
     //point x depart ligne 1
     int Pdx1 = l1[0];
-    //point y départ ligne 1
+    //point y dï¿½part ligne 1
     int Pdy1 = l1[1];
 
     //point x depart ligne 2
     int Pdx2 = l2[0];
-    //point y départ ligne 2
+    //point y dï¿½part ligne 2
     int Pdy2 = l2[1];
 
 
@@ -124,7 +131,7 @@ bool areSame_startEnd_Points(Vec4i l1, Vec4i l2, int margin_error)
     //point y fin ligne 1
     int Pfy1 = l1[3];
 
-    //point y départ ligne 2
+    //point y dï¿½part ligne 2
     int Pdy2 = l2[1];
     //point x fin ligne 2
     int Pfx2 = l2[2];
@@ -264,7 +271,7 @@ int main()
 
                 if (Pd_confondue && !Pf_confondue)
                 {
-                    // 1 check s'ils sont collinéaire + longeur du segment 
+                    // 1 check s'ils sont collinï¿½aire + longeur du segment 
                     // 2 si collineaire prendre le plus grand 
 
                     int* Vect1 = point_to_vector(ligne);
@@ -292,7 +299,7 @@ int main()
                 }
                 else if (!Pd_confondue && Pf_confondue)
                 {
-                    //1 check s'ils sont collinéaire + longeur du segment 
+                    //1 check s'ils sont collinï¿½aire + longeur du segment 
                     // 2 si collineaire prendre le plus grand 
 
                     int* Vect1 = point_to_vector(ligne);
@@ -333,8 +340,8 @@ int main()
                 }
                 else if (PdPf_confondue)
                 {
-                    // 1 Si collinéaire 
-                    // 2 vérifier les points confondues et creer un nouveau vecteur avec les point restant 
+                    // 1 if collinear 
+                    // 2 verify the confused points and create a new vector with the other points
 
                     int* Vect1 = point_to_vector(ligne);
                     int* Vect2 = point_to_vector(ligne2);
@@ -371,8 +378,9 @@ int main()
 
     int Nb_Intersections = 0;
     int lenght = static_cast<int>(best_lines.size());;
-    Point*  intersections_points = new Point[(lenght/2)];
-    Vec4i** intersections_lines = (Vec4i**)malloc((lenght/2) * sizeof(Vec4i*));
+    Point*  intersections_points = new Point[lenght];
+    Vec4i** intersections_lines = (Vec4i**)malloc(lenght * sizeof(Vec4i*));
+
     //we creat a 2d array to store the lines that will be sorted
     for (int i = 0; i < lenght; i++) 
     {
@@ -387,7 +395,7 @@ int main()
             if (!AreTrueColinear(point_to_vector(best_lines[u]), point_to_vector(best_lines[v])))
             {
                 // because some lines are quasi-parallels, we reject intersection at very higth/low position (register the ones in the image only)
-                
+
                 Point inter = intersection(best_lines[u], best_lines[v]);
                 if ((inter.x < img.size().width && inter.x > 0) && (inter.y < img.size().height && inter.y>0))
                 {
@@ -402,9 +410,9 @@ int main()
         }
     }
 
-    //we find the right array with just the lenght we need
+    //we create the array with just the exact lenght
     Point* final_intersections_points = new Point[(Nb_Intersections)];
-    //The intersection point where final_intersections_points[extreme_left] has the minimal w
+    //The intersection point where final_intersections_points[extreme_left] has the minimal X
     int extreme_left = 0;
     for (int i = 0; i < Nb_Intersections; i++) 
     {
@@ -413,6 +421,7 @@ int main()
             extreme_left = i;
         }
     }
+
     //We sort the extreme_left point as the start of the array
     Point temp_Inter = final_intersections_points[0];
     final_intersections_points[0] = final_intersections_points[extreme_left];
@@ -421,7 +430,6 @@ int main()
     Vec4i* temp_Line = intersections_lines[0];
     intersections_lines[0] = intersections_lines[extreme_left];
     intersections_lines[extreme_left] = temp_Line;
-
    
     //we want to sort the array of intersection and affiliate lines
     for (int i = 0; i < Nb_Intersections - 1; i++) 
@@ -430,7 +438,7 @@ int main()
         int minIndex;
         for (int j = i + 1; j < Nb_Intersections; j++) 
         {
-            //TODO on doit calculer la distance max possible entre les différentes intersections pour trouver les extrémitées
+            // We compute the max distance possible between the differents intersections to find the extremities
             Vec4i temp_Vect;
             temp_Vect[0] = final_intersections_points[i].x;
             temp_Vect[1] = final_intersections_points[i].y;
@@ -443,12 +451,8 @@ int main()
                 minDist = dist;
                 minIndex = j;
             }
-
-            //Ensuite, une fois les deux array bien triées, on fais un boucle for avec i et i + 1 qui du coup sont deux intersections proche, 
-            //on calcule le vecteur entre ces deux intersections qui permetra d'identifier la ligne commune a toute les intersections.
-            //Une fois cette ligne trouvé on prend le point de départ ou de fin en fonction du quadrilataire qu'on veut traiter.
-            //Même chose pour le point de l'autre intersection
         }
+
         //We sort the array
         Point temp_Inter = final_intersections_points[i+1];
         final_intersections_points[i+1] = final_intersections_points[minIndex];
@@ -458,11 +462,18 @@ int main()
         intersections_lines[i+1] = intersections_lines[minIndex];
         intersections_lines[minIndex] = temp_Line;
     }
-    Point** parkingPlaces = (Point**)malloc((Nb_Intersections*2) * sizeof(Point));
+
+    Point** parkingPlaces = (Point**)malloc(Nb_Intersections * sizeof(Point)*2);
     for (int i = 0; i < Nb_Intersections*2; i++)
     {
         parkingPlaces[i] = (Point*)malloc(4 * sizeof(Point));
     }
+
+    //Ensuite, une fois les deux array bien triï¿½es, on fais un boucle for avec i et i + 1 qui du coup sont deux intersections proche, 
+    //on calcule le vecteur entre ces deux intersections qui permetra d'identifier la ligne commune a toute les intersections.
+    //Une fois cette ligne trouvï¿½ on prend le point de dï¿½part ou de fin en fonction du quadrilataire qu'on veut traiter.
+    //Mï¿½me chose pour le point de l'autre intersection
+
     for (int i = 0; i < Nb_Intersections - 1; i++) 
     {
         //We creat a vector between the two intersections
@@ -472,6 +483,7 @@ int main()
         temp_VectInter[2] = final_intersections_points[i+1].x;
         temp_VectInter[3] = final_intersections_points[i+1].y;
         int* vectInter = point_to_vector(temp_VectInter);
+
         //I take the two affiliated lines
         int* vectline1 = point_to_vector(intersections_lines[i][0]);
         int* vectline2 = point_to_vector(intersections_lines[i][1]);
@@ -480,9 +492,11 @@ int main()
         int* vect2line1 = point_to_vector(intersections_lines[i+1][0]);
         int* vect2line2 = point_to_vector(intersections_lines[i+1][1]);
 
-        if (areColinear(vectInter, vectline2)) {
+        if (areColinear(vectInter, vectline2)) 
+        {
             //We take the start point of the other affiliated line
             parkingPlaces[i][0] = Point(intersections_lines[i][0][0], intersections_lines[i][0][1]);
+
             //We also take the two intersection points
             parkingPlaces[i][1] = Point(temp_VectInter[0], temp_VectInter[1]);
             parkingPlaces[i][2] = Point(temp_VectInter[2], temp_VectInter[3]);
@@ -491,17 +505,15 @@ int main()
             parkingPlaces[i+1][0] = Point(intersections_lines[i][0][2], intersections_lines[i][0][3]);
             parkingPlaces[i+1][1] = Point(temp_VectInter[0], temp_VectInter[1]);
             parkingPlaces[i+1][2] = Point(temp_VectInter[2], temp_VectInter[3]);
+
+            //We need to find the second start point using the second intersection point
             if (areColinear(vectInter, vect2line2) )
-            {
-                //We need to find the second start point using the second intersection point
                 parkingPlaces[i][3] = Point(intersections_lines[i+1][0][0], intersections_lines[i+1][0][1]);
-            }
             else if (areColinear(vectInter, vect2line1))
-            {
                 parkingPlaces[i][3] = Point(intersections_lines[i + 1][1][1], intersections_lines[i + 1][1][1]);
-            }
         }
-        else if (areColinear(vectInter, vectline1)) {
+        else if (areColinear(vectInter, vectline1)) 
+        {
             parkingPlaces[i][0] = Point(intersections_lines[i][1][0], intersections_lines[i][1][1]);
             parkingPlaces[i][1] = Point(temp_VectInter[0], temp_VectInter[1]);
             parkingPlaces[i][2] = Point(temp_VectInter[2], temp_VectInter[3]);
@@ -509,20 +521,18 @@ int main()
             parkingPlaces[i + 1][0] = Point(intersections_lines[i][1][2], intersections_lines[i][1][3]);
             parkingPlaces[i + 1][1] = Point(temp_VectInter[0], temp_VectInter[1]);
             parkingPlaces[i + 1][2] = Point(temp_VectInter[2], temp_VectInter[3]);
+
             if (areColinear(vectInter, vect2line2))
-            {
                 parkingPlaces[i][3] = Point(intersections_lines[i + 1][0][0], intersections_lines[i + 1][0][1]);
-            }
             else if (areColinear(vectInter, vect2line1))
-            {
                 parkingPlaces[i][3] = Point(intersections_lines[i + 1][1][1], intersections_lines[i + 1][1][1]);
-            }
         }
         else {
-            cout << "on a un problème d'ordre \n";
+            cout << "on a un problï¿½me d'ordre \n";
         }
-
     }
+
+
     //for (int i = 0; i < Nb_Intersections - 1; i++) {
         for (int j = 0; j < 4; j++) {
             circle(BW_mat2, parkingPlaces[0][j], 2, Scalar(100, 255, 255), 10);
@@ -575,7 +585,7 @@ int main()
     circle(BW_mat2, Point(best_lines[5][0], best_lines[5][1]), 2, Scalar(100, 255, 255), 10);
     circle(BW_mat2, Point(best_lines[5][2], best_lines[5][3]), 2, 255, 10);
 
-    // 3 et 5 sont sur une même  ligne, un des deux doit etre DEGAGE CE FDP
+    // 3 et 5 sont sur une mï¿½me  ligne, un des deux doit etre DEGAGE CE FDP
 
     cout << "---------\n";
 
