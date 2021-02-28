@@ -293,7 +293,7 @@ int main()
                     }
                     else
                     {
-                        cout << "erreor : !Pf_confondue & Pd_confondue = HORTOGONAL\n";
+                        cout << "erreor : !Pf_confondue & Pd_confondue = ORTOGONAL\n";
                     }
 
                 }
@@ -322,7 +322,7 @@ int main()
                     }
                     else
                     {
-                        cout << "erreor : Pf_confondue & !Pd_confondue = HORTOGONAL\n";
+                        cout << "erreor : Pf_confondue & !Pd_confondue = ORTOGONAL\n";
                     }
 
                 }
@@ -629,19 +629,16 @@ int main()
         diagonal2[3] = parkingPlaces[i][3].y;
         
         Point middle = intersection(diagonal1, diagonal2);
-        cout << middle << "coucou \n";
-        circle(BW_mat2, middle, 2, Scalar(100, 255, 255), 10);
+        circle(img, middle, 2, Scalar(0, 0, 0), 10);
         for (int m = -3; m < 4; m++) {
             for (int n = -3; n < 4; n++) {
-                cout << "start double for \n";
-                Vec3b pixel_temp = img.at<Vec3b>(m, n);
+                Vec3b pixel_temp = img.at<Vec3b>(middle.y + m, middle.x + n);
                 //We compare the two pixel with an error margin
-                cout << "pixel temps sam ère \n";
                 if (!pixel_temp[0] >= colorMedian[0]- MarginColor_error && !pixel_temp[0] <= colorMedian[0]+ MarginColor_error) {
+                    cout << "coucou pute\n";
                     if (!pixel_temp[1] >= colorMedian[1] - MarginColor_error && !pixel_temp[1] <= colorMedian[1] + MarginColor_error) {
                         if (!pixel_temp[2] >= colorMedian[2] - MarginColor_error && !pixel_temp[2] <= colorMedian[2] + MarginColor_error) {
                             flag = true;
-                            cout << "nique ta mère julie \n";
                         }
                     }
                 }
@@ -652,12 +649,12 @@ int main()
             flag = false;
         }
     }
-    cout << "il y a : " << Nb_totalPlaces << "places dont " << Nb_takenPlaces << " prises \n";
+    cout << "il y a : " << Nb_totalPlaces << " places dont " << Nb_takenPlaces << " prises \n";
 
 
     for (int i = 0; i <(Nb_Intersections-1)*2; i++) {
         for (int j = 0; j < 4; j++) {
-            circle(BW_mat2, parkingPlaces[i][j], 2, Scalar(100, 255, 255), 10);
+            circle(img, parkingPlaces[i][j], 2, Scalar(0, 0, 0), 10);
         }
         
     }
