@@ -164,7 +164,7 @@ Point intersection(Vec4i l1, Vec4i l2)
 int main()
 {
     //read the image file
-    Mat img = imread("./Images/parking3.jpg");
+    Mat img = imread("./Images/parking6.jpg");
     int imgWidth = img.cols;
 
     if (img.empty()) // Check for failure
@@ -177,14 +177,14 @@ int main()
     //------Read Pictures with lines-----///
 
     // Convert to gray-scale
-    Mat greyMat;
-    cvtColor(img, greyMat, cv::COLOR_RGB2GRAY);
+    Mat img_gray_scale;
+    cvtColor(img, img_gray_scale, cv::COLOR_RGB2GRAY);
 
     // Store the edges   
     Mat FirstEdges;
 
     // Find the edges in the image using canny detector
-    Canny(greyMat, FirstEdges, 200, 255);
+    Canny(img_gray_scale, FirstEdges, 200, 255);
 
     // Create a vector to store lines of the image
     vector<Vec4i> all_lines;
@@ -194,38 +194,38 @@ int main()
     for (size_t i = 0; i < all_lines.size(); i++)
     {
         Vec4i l = all_lines[i];
-        line(greyMat, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255, 0, 0), 3, LINE_AA);
+        line(img_gray_scale, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255, 0, 0), 3, LINE_AA);
     }
 
     // image in black and white only with the lines detected + random white pixels
-    Mat BW_mat;
+    Mat img_bw_lines;
 
     // to erase the cars and keep only the whites lines + random white pixels
-    threshold(greyMat, BW_mat, 254, 255, THRESH_BINARY);
+    threshold(img_gray_scale, img_bw_lines, 254, 255, THRESH_BINARY);
 
     // to erase random white pixels
-    erode(BW_mat, BW_mat, Mat());
+    erode(img_bw_lines, img_bw_lines, Mat());
 
     // to get beautiful lines
-    dilate(BW_mat, BW_mat, Mat(), Point(-1, -1), 1);
+    dilate(img_bw_lines, img_bw_lines, Mat(), Point(-1, -1), 1);
 
     // Store the edges   
     Mat SecondEdges;
 
     // Find the edges in the image using canny detector, every pixel with color < 200 is black
-    Canny(BW_mat, SecondEdges, 200, 255);
+    Canny(img_bw_lines, SecondEdges, 200, 255);
 
     // image in black and white only with the lines detected + random white pixels
-    Mat BW_mat2;
+    Mat img_bw_lines2;
 
     // to erase the cars and keep only the whites lines + random white pixels
-    threshold(greyMat, BW_mat2, 254, 255, THRESH_BINARY);
+    threshold(img_gray_scale, img_bw_lines2, 254, 255, THRESH_BINARY);
 
     // to erase random white pixels
-    erode(BW_mat2, BW_mat2, Mat());
+    erode(img_bw_lines2, img_bw_lines2, Mat());
 
     // to get beautiful lines
-    dilate(BW_mat2, BW_mat2, Mat(), Point(-1, -1), 1);
+    dilate(img_bw_lines2, img_bw_lines2, Mat(), Point(-1, -1), 1);
 
 
     // Create a vector to store lines of the image
@@ -319,7 +319,7 @@ int main()
                     }
                     else
                     {
-                        cout << "erreor : Pf_confondue & !Pd_confondue = ORTOGONAL\n";
+                        cout << "error : Pf_confondue & !Pd_confondue = ORTOGONAL\n";
                     }
 
                 }
@@ -461,7 +461,7 @@ int main()
 
     int NB_places = (Nb_Intersections - 1) * 2;
     Point** parkingPlaces = (Point**)malloc(NB_places * sizeof(Point));
-    for (int i = 0; i < (Nb_Intersections-1) * 2; i++)
+    for (int i = 0; i < (Nb_Intersections - 1) * 2; i++)
         parkingPlaces[i] = (Point*)malloc(4 * sizeof(Point));
 
     //--------------    We sort the intersection points from left to right & same for the intersection lines in order to get the places  -----------------------------------
@@ -500,7 +500,7 @@ int main()
         {
             /*
             We take the start point of the other affiliated line
-            The representation of the array parkingPlaces[i][0/1/2/3], each number represent a point a the square 
+            The representation of the array parkingPlaces[i][0/1/2/3], each number represent a point a the square
             |  p  0  p  2  p  |
             |  l  |  l  |  l  |
             |  a  |  a  |  a  |
@@ -562,53 +562,64 @@ int main()
         ParkingPlaceindex += 2;
     }
 
-    //----------------    We are going to check from the diagonal intersection of the square    -----------------------------------
+    //----------------    We are going to check the mean background color value    -----------------------------------
 
-    //We search the color of the background
-    int** Colors;
-    Colors = (int**)malloc(imgWidth * sizeof(int*));
-    for (int i = 0; i < imgWidth; i++)
-        Colors[i] = (int*)malloc(3 * sizeof(int));
+    imshow("img début", img);
 
-    //We register the pixel's color of the first line to select the mediane value
-    for (int x = 0; x < imgWidth; x++) {
-        //Vec3b store the color in BGR
-        Vec3b pixel = img.at<Vec3b>(0, x);
-        Colors[x][0] = pixel[0];
-        Colors[x][1] = pixel[1];
-        Colors[x][2] = pixel[2];
+    // convert to float & reshape to a [3 x W*H] Mat 
+    //  (so every pixel is on a row of it's own)
+
+    /*
+    * CV_32F is float - the pixel can have any value between 0-1.0, this is useful for some sets of calculations on data -
+    * but it has to be converted into 8bits to save or display by multiplying each pixel by 255.
+    */
+    Mat img_reduced_background_color;
+    img.convertTo(img_reduced_background_color, CV_32F);
+    img_reduced_background_color = img_reduced_background_color.reshape(1, img_reduced_background_color.total());
+
+    // do kmeans
+    /*
+    * Finds centers of clusters and groups input samples around the clusters.
+    * The function kmeans implements a k-means algorithm that finds the centers of cluster_count clusters
+    * and groups the input samples around the clusters.
+    * As an output, bestLabelsi contains a 0-based cluster index for the sample stored in the ith row of the samples matrix.
+    *
+    * labels : Input/output integer array that stores the cluster indices for every sample.
+    * centers : 	Output matrix of the cluster centers, one row per each cluster center.
+    */
+
+    Mat labels, mean_background_value;
+
+    //we keep 2 for the second argument, because we want a lower margin error -> 2 is the number of mean colors
+    kmeans(img_reduced_background_color, 2, labels, TermCriteria(TermCriteria::COUNT, 10, 1.0), 3, KMEANS_PP_CENTERS, mean_background_value);
+
+    cout << " centers  : " << (int)mean_background_value.at<float>(0, 0) << "\n";
+    cout << " centers  : " << (int)mean_background_value.at<float>(0, 1) << "\n";
+    cout << " centers  : " << (int)mean_background_value.at<float>(0, 2) << "\n";
+    cout << " centers  : " << mean_background_value.row(0) << "\n";
+
+
+    // reshape both to a single row of Vec3f pixels
+    mean_background_value = mean_background_value.reshape(3, mean_background_value.rows);
+    img_reduced_background_color = img_reduced_background_color.reshape(3, img_reduced_background_color.rows);
+
+
+    // back to 2d, and uchar:
+    img = img_reduced_background_color.reshape(3, img.rows);
+    img.convertTo(img, CV_8U);
+
+    int siz = 64;
+    Mat cent = mean_background_value.reshape(3, mean_background_value.rows);
+    // make  a horizontal bar of K color patches:
+    Mat draw(siz, siz * cent.rows, cent.type(), Scalar::all(0));
+    for (int i = 0; i < cent.rows; i++) {
+        // set the resp. ROI to that value (just fill it):
+        draw(Rect(i * siz, 0, siz, siz)) = cent.at<Vec3f>(i, 0);
     }
+    draw.convertTo(draw, CV_8U);
 
-    //Now we sort the Colors array
-    //On est pas sur que la mediane des composante de la couleur recomposée donne comme résultat la mediane des couleurs mais on est dans un cas parfait donc on en reste la
-    for (int a = 0; a < imgWidth - 1; a++) {
-        for (int b = a + 1; b < imgWidth; b++) {
-            // Blue
-            if (Colors[a][0] > Colors[b][0]) {
-                int temp = Colors[a][0];
-                Colors[a][0] = Colors[b][0];
-                Colors[b][0] = temp;
-            }
-            // Green
-            if (Colors[a][1] > Colors[b][1]) {
-                int temp = Colors[a][1];
-                Colors[a][1] = Colors[b][1];
-                Colors[b][1] = temp;
-            }
-            // Red
-            if (Colors[a][2] > Colors[b][2]) {
-                int temp = Colors[a][2];
-                Colors[a][2] = Colors[b][2];
-                Colors[b][2] = temp;
-            }
-        }
-    }
-
-    //We take the median in BGR
-    int colorMedian[3];
-    colorMedian[0] = Colors[imgWidth / 2][0];
-    colorMedian[1] = Colors[imgWidth / 2][1];
-    colorMedian[2] = Colors[imgWidth / 2][2];
+    // optional visualization:
+    imshow("CENTERS", draw);
 
     int MarginColor_error = 10;
     bool flag = false;
@@ -629,25 +640,17 @@ int main()
         diagonal2[3] = parkingPlaces[i][3].y;
 
         Point middle = intersection(diagonal1, diagonal2);
-        circle(img, middle, 2, Scalar(0, 0, 0), 10);
+
 
         for (int m = -3; m < 4; m++) {
             for (int n = -3; n < 4; n++) {
-                Vec3b pixel_temp = img.at<Vec3b>(middle.y + n, middle.x+ m);
-                //We compare the two pixel with an error margin
-                /*
-                cout << "color median :"<< colorMedian[0] << "\n" ;
-                cout << "color temp :" << (float)pixel_temp[0] << "\n";
-                cout << "color temp :" << (float)pixel_temp[1] << "\n";
-                cout << "color temp :" << (float)pixel_temp[2] << "\n";
-                */
+                Vec3b pixel_temp = img.at<Vec3b>(middle.y + n, middle.x + m);
+                //We compare the two pixel with an error margin in BGR
 
-                if (!(float)pixel_temp[0] >= (float)colorMedian[0] - MarginColor_error && !(float)pixel_temp[0] <= (float)colorMedian[0] + MarginColor_error) {
-                    if (!(float)pixel_temp[1] >= (float)colorMedian[1] - MarginColor_error && !(float)pixel_temp[1] <= (float)colorMedian[1] + MarginColor_error) {
-                        if (!(float)pixel_temp[2] >= (float)colorMedian[2] - MarginColor_error && !(float)pixel_temp[2] <= (float)colorMedian[2] + MarginColor_error) {
-                            flag = true;
-                        }
-                    }
+                if (!(pixel_temp[0] >= (int)mean_background_value.at<float>(0, 0) - MarginColor_error && pixel_temp[0] <= (int)mean_background_value.at<float>(0, 0) + MarginColor_error)
+                    || !(pixel_temp[1] >= (int)mean_background_value.at<float>(0, 1) - MarginColor_error && pixel_temp[1] <= (int)mean_background_value.at<float>(0, 1) + MarginColor_error)
+                    || !(pixel_temp[2] >= (int)mean_background_value.at<float>(0, 2) - MarginColor_error && pixel_temp[2] <= (int)mean_background_value.at<float>(0, 2) + MarginColor_error)) {
+                    flag = true;
                 }
             }
         }
@@ -655,12 +658,15 @@ int main()
             Nb_takenPlaces++;
             flag = false;
         }
+
+        circle(img, middle, 2, Scalar(255, 0, 0), 10);
     }
+
 
     cout << "il y a : " << NB_places << " places dont " << Nb_takenPlaces << " prises \n";
 
 
-    //circle(BW_mat2, final_intersections_points[0], 2, new Scalar(100, 255, 255), 10);
+    //circle(img_bw_lines2, final_intersections_points[0], 2, new Scalar(100, 255, 255), 10);
     /*
     cout << "intersections = \n";
     for (int aaaaa = 0; aaaaa <= (lenght/2); aaaaa++)
@@ -675,14 +681,16 @@ int main()
     }
     */
 
+
+
     imshow("img", img);
-    imshow("GREY", greyMat);
+    //imshow("GREY", img_gray_scale);
 
-    display_lines(parking_lines, BW_mat);
-    display_lines(best_lines, BW_mat2);
+    display_lines(parking_lines, img_bw_lines);
+    display_lines(best_lines, img_bw_lines2);
 
-    imshow("Image parking lines - BW_mat", BW_mat);
-    imshow("Image parking best_lines - BW_Mat2", BW_mat2);
+    //imshow("Image parking lines - img_bw_lines", img_bw_lines);
+    imshow("Image parking best_lines - img_bw_lines2", img_bw_lines2);
 
 
     // free space
@@ -694,21 +702,16 @@ int main()
         free(parkingPlaces[f]);
     free(parkingPlaces);
 
-    for (int f = 0; f < imgWidth; f++)
-        free(Colors[f]);
-    free(Colors);
-
-
     waitKey(0); // Wait for any keystroke in the window
     return 0;
 
     // test code
     /*
-    circle(BW_mat2, Point(best_lines[0][0], best_lines[0][1]), 2, new Scalar(100, 255, 255), 10);
-    circle(BW_mat2, Point(best_lines[0][2], best_lines[0][3]), 2, 255, 10);
+    circle(img_bw_lines2, Point(best_lines[0][0], best_lines[0][1]), 2, new Scalar(100, 255, 255), 10);
+    circle(img_bw_lines2, Point(best_lines[0][2], best_lines[0][3]), 2, 255, 10);
 
-    circle(BW_mat2, Point(best_lines[5][0], best_lines[5][1]), 2, new Scalar(100, 255, 255), 10);
-    circle(BW_mat2, Point(best_lines[5][2], best_lines[5][3]), 2, 255, 10);
+    circle(img_bw_lines2, Point(best_lines[5][0], best_lines[5][1]), 2, new Scalar(100, 255, 255), 10);
+    circle(img_bw_lines2, Point(best_lines[5][2], best_lines[5][3]), 2, 255, 10);
 
     // 3 et 5 sont sur une m�me  ligne, un des deux doit etre DEGAGE CE FDP
 
