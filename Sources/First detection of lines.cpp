@@ -367,22 +367,21 @@ int main()
                 {
                     //cout << "Julie est contente" << endl;
                 }
-
             }
         }
-
     }
+
+    //--------------    We analyse all the lines to find the intersections point between the places's white lines and the middle white line   -----------------------------------
+
 
     int Nb_Intersections = 0;
     int lenght = static_cast<int>(best_lines.size());;
     Point* intersections_points = new Point[lenght];
-    Vec4i** intersections_lines = (Vec4i**)malloc(lenght * sizeof(Vec4i*));
 
     //we creat a 2d array to store the lines that will be sorted
+    Vec4i** intersections_lines = (Vec4i**)malloc(lenght * sizeof(Vec4i*));
     for (int i = 0; i < lenght; i++)
-    {
         intersections_lines[i] = (Vec4i*)malloc(2 * sizeof(Vec4i));
-    }
 
     //we find the intersection and put them in an array, we also store the lines that intersect
     for (size_t u = 0; u < best_lines.size() - 1; u++)
@@ -460,24 +459,24 @@ int main()
         intersections_lines[minIndex] = temp_Line;
     }
 
-    //(Nb_Intersections - 1) * 2 represent the number of parking places
-    Point** parkingPlaces = (Point**)malloc(((Nb_Intersections-1) *2) * sizeof(Point));
+    int NB_places = (Nb_Intersections - 1) * 2;
+    Point** parkingPlaces = (Point**)malloc(NB_places * sizeof(Point));
     for (int i = 0; i < (Nb_Intersections-1) * 2; i++)
-    {
         parkingPlaces[i] = (Point*)malloc(4 * sizeof(Point));
-    }
 
+    //--------------    We sort the intersection points from left to right & same for the intersection lines in order to get the places  -----------------------------------
 
     //Ensuite, une fois les deux array bien tri�es, on fais un boucle for avec i et i + 1 qui du coup sont deux intersections proche, 
     //on calcule le vecteur entre ces deux intersections qui permetra d'identifier la ligne commune a toute les intersections.
     //Une fois cette ligne trouv� on prend le point de d�part ou de fin en fonction du quadrilataire qu'on veut traiter.
-    //M�me chose pour le point de l'autre intersection
+    //Meme chose pour le point de l'autre intersection
     int ParkingPlaceindex = 0;
     /*
     0 | 2 | 4 ...
     -------------
     1 | 3 | 5 ...
     */
+
     for (int i = 0; i < Nb_Intersections - 1; i++)
     {
         //We creat a vector between the two intersections
@@ -499,12 +498,15 @@ int main()
 
         if (areColinear(vectInter, vectline2))
         {
-            //We take the start point of the other affiliated line
-            //The representation of the array parkingPlaces[i][0/1/2/3], each number represent a point a the square 
             /*
-            |0  2|
-            |1  3|
-            ------
+            We take the start point of the other affiliated line
+            The representation of the array parkingPlaces[i][0/1/2/3], each number represent a point a the square 
+            |  p  0  p  2  p  |
+            |  l  |  l  |  l  |
+            |  a  |  a  |  a  |
+            |  c  |  c  |  c  |
+            |  e  1  e  3  e  |
+            --------------------separation line
             */
             parkingPlaces[ParkingPlaceindex][0] = Point(intersections_lines[i][0][0], intersections_lines[i][0][1]);
 
@@ -566,9 +568,7 @@ int main()
     int** Colors;
     Colors = (int**)malloc(imgWidth * sizeof(int*));
     for (int i = 0; i < imgWidth; i++)
-    {
         Colors[i] = (int*)malloc(3 * sizeof(int));
-    }
 
     //We register the pixel's color of the first line to select the mediane value
     for (int x = 0; x < imgWidth; x++) {
@@ -610,13 +610,11 @@ int main()
     colorMedian[1] = Colors[imgWidth / 2][1];
     colorMedian[2] = Colors[imgWidth / 2][2];
 
-    //(Nb_Intersections-1)*2 represent the number of parking places
-    int Nb_totalPlaces = (Nb_Intersections - 1) * 2;
     int MarginColor_error = 10;
     bool flag = false;
     int Nb_takenPlaces = 0;
 
-    for (int i = 0; i < (Nb_Intersections - 1) * 2; i++)
+    for (int i = 0; i < NB_places; i++)
     {
         Vec4i diagonal1;
         diagonal1[0] = parkingPlaces[i][0].x;
@@ -658,7 +656,8 @@ int main()
             flag = false;
         }
     }
-    cout << "il y a : " << Nb_totalPlaces << " places dont " << Nb_takenPlaces << " prises \n";
+
+    cout << "il y a : " << NB_places << " places dont " << Nb_takenPlaces << " prises \n";
 
 
     //circle(BW_mat2, final_intersections_points[0], 2, new Scalar(100, 255, 255), 10);
@@ -685,11 +684,20 @@ int main()
     imshow("Image parking lines - BW_mat", BW_mat);
     imshow("Image parking best_lines - BW_Mat2", BW_mat2);
 
-    for (int i = 0; i < lenght; i++)
-    {
-        free(intersections_lines[i]);
-    }
+
+    // free space
+    for (int f = 0; f < lenght; f++)
+        free(intersections_lines[f]);
     free(intersections_lines);
+
+    for (int f = 0; f < NB_places; f++)
+        free(parkingPlaces[f]);
+    free(parkingPlaces);
+
+    for (int f = 0; f < imgWidth; f++)
+        free(Colors[f]);
+    free(Colors);
+
 
     waitKey(0); // Wait for any keystroke in the window
     return 0;
