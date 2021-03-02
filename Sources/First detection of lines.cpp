@@ -70,7 +70,6 @@ bool areColinear(int* v1, int* v2)
 bool AreTrueColinear(int* v1, int* v2)
 {
     float k = (float)v1[0] / (float)v2[0];
-    //lilian the nazi Arrrr
     if (v2[1] * k == v1[1])
         return true;
     else
@@ -90,12 +89,12 @@ bool areSame_startPoint(Vec4i l1, Vec4i l2, int margin_error)
 {
     //point x depart ligne 1
     int Pdx1 = l1[0];
-    //point y d�part ligne 1
+    //point y depart ligne 1
     int Pdy1 = l1[1];
 
     //point x depart ligne 2
     int Pdx2 = l2[0];
-    //point y d�part ligne 2
+    //point y depart ligne 2
     int Pdy2 = l2[1];
 
 
@@ -174,7 +173,7 @@ int main()
         return -1;
     }
 
-    //------Read Pictures with lines-----///
+    //------   Read Pictures with first detection of lines + second gray scale to try to keep only the white lines  -----///
 
     // Convert to gray-scale
     Mat img_gray_scale;
@@ -227,7 +226,6 @@ int main()
     // to get beautiful lines
     dilate(img_bw_lines2, img_bw_lines2, Mat(), Point(-1, -1), 1);
 
-
     // Create a vector to store lines of the image
     vector<Vec4i> parking_lines;
 
@@ -235,14 +233,14 @@ int main()
     HoughLinesP(SecondEdges, parking_lines, 1, CV_PI / 180, 100, 20, 10000);
 
 
+    // ----------- creation of image with only perfects white lines and a black background ----------------
 
-    // ----------- creation of third image ----------------
 
     // To store all lines/points without points in the same near area (we don t know how to delete so we create a new one)
     vector<Vec4i> best_lines = parking_lines;
-    bool Pd_confondue;
-    bool Pf_confondue;
-    bool PdPf_confondue;
+    bool startPoint_Confused;
+    bool endPoint_Confused;
+    bool startEndPoint_Confused;
 
     // check the points between them to keep only one by line
     for (size_t u = 0; u < best_lines.size() - 1; u++)
@@ -256,51 +254,49 @@ int main()
 
             for (size_t v = u + 1; v < best_lines.size(); v++)
             {
-                //Distance max entre deux points pour etre confondues
+                // Max distance in pixel bewteen two point to be considered as fusioned
                 int margin_error = 70;
 
-                Vec4i ligne = best_lines[u];
-                Vec4i ligne2 = best_lines[v];
+                Vec4i line = best_lines[u];
+                Vec4i line2 = best_lines[v];
 
-                Pd_confondue = areSame_startPoint(ligne, ligne2, margin_error);
-                Pf_confondue = areSame_endPoint(ligne, ligne2, margin_error);
-                PdPf_confondue = areSame_startEnd_Points(ligne, ligne2, margin_error);
+                startPoint_Confused = areSame_startPoint(line, line2, margin_error);
+                endPoint_Confused = areSame_endPoint(line, line2, margin_error);
+                startEndPoint_Confused = areSame_startEnd_Points(line, line2, margin_error);
 
-                if (Pd_confondue && !Pf_confondue)
+                if (startPoint_Confused && !endPoint_Confused)
                 {
-                    // 1 check s'ils sont collin�aire + longeur du segment 
-                    // 2 si collineaire prendre le plus grand 
+                    // 1 check is they are colinear + size of the segment
+                    // 2 if colinear, then we take the larger
 
-                    int* Vect1 = point_to_vector(ligne);
-                    int* Vect2 = point_to_vector(ligne2);
+                    int* Vect1 = point_to_vector(line);
+                    int* Vect2 = point_to_vector(line2);
 
                     if (areColinear(Vect1, Vect2))
                     {
                         if (length(Vect1) > length(Vect2))
                         {
                             best_lines.erase(best_lines.begin() + v);
-                            cout << "delete \n";
                         }
                         else
                         {
-                            cout << "delete \n";
                             best_lines.erase(best_lines.begin() + u);
                         }
                         allClear = false;
                     }
                     else
                     {
-                        cout << "erreor : !Pf_confondue & Pd_confondue = ORTOGONAL\n";
+                        cout << "error : !endPoint_confused & startPoint_confused = ORTHOGONAL\n";
                     }
 
                 }
-                else if (!Pd_confondue && Pf_confondue)
+                else if (!startPoint_Confused && endPoint_Confused)
                 {
-                    //1 check s'ils sont collin�aire + longeur du segment 
-                    // 2 si collineaire prendre le plus grand 
+                    // 1 check is they are colinear + size of the segment
+                    // 2 if colinear, then we take the larger
 
-                    int* Vect1 = point_to_vector(ligne);
-                    int* Vect2 = point_to_vector(ligne2);
+                    int* Vect1 = point_to_vector(line);
+                    int* Vect2 = point_to_vector(line2);
 
                     if (areColinear(Vect1, Vect2))
                     {
@@ -308,25 +304,23 @@ int main()
                         {
 
                             best_lines.erase(best_lines.begin() + v);
-                            cout << "delete \n";
                         }
                         else
                         {
-                            cout << "delete \n";
                             best_lines.erase(best_lines.begin() + u);
                         }
                         allClear = false;
                     }
                     else
                     {
-                        cout << "error : Pf_confondue & !Pd_confondue = ORTOGONAL\n";
+                        cout << "error : endPoint_confused & !startPoint_confused = ORTHOGONAL\n";
                     }
 
                 }
-                else if (Pd_confondue && Pf_confondue)
+                else if (startPoint_Confused && endPoint_Confused)
                 {
-                    // moyenne des pf et pd / les deux vecteurs pareils
-                    Vec4i average_segment = average_line(ligne, ligne2);
+                    // we make the new start point = middle of the 2 start point & same for the end point
+                    Vec4i average_segment = average_line(line, line2);
                     best_lines.erase(best_lines.begin() + v);
                     best_lines.erase(best_lines.begin() + u);
 
@@ -335,21 +329,21 @@ int main()
                     allClear = false;
 
                 }
-                else if (PdPf_confondue)
+                else if (startEndPoint_Confused)
                 {
                     // 1 if collinear 
                     // 2 verify the confused points and create a new vector with the other points
 
-                    int* Vect1 = point_to_vector(ligne);
-                    int* Vect2 = point_to_vector(ligne2);
+                    int* Vect1 = point_to_vector(line);
+                    int* Vect2 = point_to_vector(line2);
 
                     if (areColinear(Vect1, Vect2))
                     {
                         Vec4i fusioned_vector;
-                        fusioned_vector[0] = ligne[0];
-                        fusioned_vector[1] = ligne[1];
-                        fusioned_vector[2] = ligne2[2];
-                        fusioned_vector[3] = ligne2[3];
+                        fusioned_vector[0] = line[0];
+                        fusioned_vector[1] = line[1];
+                        fusioned_vector[2] = line2[2];
+                        fusioned_vector[3] = line2[3];
 
                         best_lines.erase(best_lines.begin() + v);
                         best_lines.erase(best_lines.begin() + u);
@@ -360,12 +354,12 @@ int main()
                     }
                     else
                     {
-                        cout << "erreor : PDPF_CONFONDUE = ORTOGONAL\n";
+                        cout << "erreor : end & start point confused = ORTHOGONAL\n";
                     }
                 }
                 else
                 {
-                    //cout << "Julie est contente" << endl;
+                    // the line is a good line, alone
                 }
             }
         }
@@ -375,22 +369,22 @@ int main()
 
 
     int Nb_Intersections = 0;
-    int lenght = static_cast<int>(best_lines.size());;
-    Point* intersections_points = new Point[lenght];
+    int Nb_bestLines = static_cast<int>(best_lines.size());;
+    Point* intersections_points = new Point[Nb_bestLines];
 
-    //we creat a 2d array to store the lines that will be sorted
-    Vec4i** intersections_lines = (Vec4i**)malloc(lenght * sizeof(Vec4i*));
-    for (int i = 0; i < lenght; i++)
+    // Creation a 2d array to store the lines which are intersecting
+    Vec4i** intersections_lines = (Vec4i**)malloc(Nb_bestLines * sizeof(Vec4i*));
+    for (int i = 0; i < Nb_bestLines; i++)
         intersections_lines[i] = (Vec4i*)malloc(2 * sizeof(Vec4i));
 
-    //we find the intersection and put them in an array, we also store the lines that intersect
+    // We find the intersection and put them in an array, we also store the lines that intersect
     for (size_t u = 0; u < best_lines.size() - 1; u++)
     {
         for (size_t v = u + 1; v < best_lines.size(); v++)
         {
             if (!AreTrueColinear(point_to_vector(best_lines[u]), point_to_vector(best_lines[v])))
             {
-                // because some lines are quasi-parallels, we reject intersection at very higth/low position (register the ones in the image only)
+                // because some lines are quasi-parallels, we reject intersection at very higth/low X/Y position (register the ones in the image only)
 
                 Point inter = intersection(best_lines[u], best_lines[v]);
                 if ((inter.x < img.size().width && inter.x > 0) && (inter.y < img.size().height && inter.y>0))
@@ -406,8 +400,8 @@ int main()
         }
     }
 
-    //we create the array with just the exact lenght
-    Point* final_intersections_points = new Point[(Nb_Intersections)];
+    // New array with intersections which will be reorganized from Xmin to Xmax (left to right)
+    Point* final_intersections_points = new Point[Nb_Intersections];
     //The intersection point where final_intersections_points[extreme_left] has the minimal X
     int extreme_left = 0;
     for (int i = 0; i < Nb_Intersections; i++)
@@ -422,7 +416,7 @@ int main()
     Point temp_Inter = final_intersections_points[0];
     final_intersections_points[0] = final_intersections_points[extreme_left];
     final_intersections_points[extreme_left] = temp_Inter;
-    //We do the same for the corresponding line array
+    //We do the same for the corresponding intersected lines array
     Vec4i* temp_Line = intersections_lines[0];
     intersections_lines[0] = intersections_lines[extreme_left];
     intersections_lines[extreme_left] = temp_Line;
@@ -453,7 +447,7 @@ int main()
         Point temp_Inter = final_intersections_points[i + 1];
         final_intersections_points[i + 1] = final_intersections_points[minIndex];
         final_intersections_points[minIndex] = temp_Inter;
-        //We do the same for the corresponding line array
+        //We do the same for the corresponding intersected lines array
         Vec4i* temp_Line = intersections_lines[i + 1];
         intersections_lines[i + 1] = intersections_lines[minIndex];
         intersections_lines[minIndex] = temp_Line;
@@ -464,14 +458,11 @@ int main()
     for (int i = 0; i < (Nb_Intersections - 1) * 2; i++)
         parkingPlaces[i] = (Point*)malloc(4 * sizeof(Point));
 
-    //--------------    We sort the intersection points from left to right & same for the intersection lines in order to get the places  -----------------------------------
+    //--------------    Starting from the intersection points & corresponding lines, we identify the parking places    ------------------------
 
-    //Ensuite, une fois les deux array bien tri�es, on fais un boucle for avec i et i + 1 qui du coup sont deux intersections proche, 
-    //on calcule le vecteur entre ces deux intersections qui permetra d'identifier la ligne commune a toute les intersections.
-    //Une fois cette ligne trouv� on prend le point de d�part ou de fin en fonction du quadrilataire qu'on veut traiter.
-    //Meme chose pour le point de l'autre intersection
     int ParkingPlaceindex = 0;
     /*
+    Corresponding parking places 
     0 | 2 | 4 ...
     -------------
     1 | 3 | 5 ...
@@ -479,7 +470,8 @@ int main()
 
     for (int i = 0; i < Nb_Intersections - 1; i++)
     {
-        //We creat a vector between the two intersections
+        // We create a vector between a consecutive pair of intersection points which will create 2 points of 4 of the quadrilatere 
+        // to identify the common line of all the intersections line of the parking place
         Vec4i temp_VectInter;
         temp_VectInter[0] = final_intersections_points[i].x;
         temp_VectInter[1] = final_intersections_points[i].y;
@@ -487,8 +479,7 @@ int main()
         temp_VectInter[3] = final_intersections_points[i + 1].y;
         int* vectInter = point_to_vector(temp_VectInter);
 
-        //I take the two affiliated lines
-        //intersection lines[i][one of the 2 lines which create the intersection][x/y of point 1, x/y of point 2]
+        //I take the two affiliated lines of the first intersection point
         int* vectline1 = point_to_vector(intersections_lines[i][0]);
         int* vectline2 = point_to_vector(intersections_lines[i][1]);
 
@@ -499,22 +490,26 @@ int main()
         if (areColinear(vectInter, vectline2))
         {
             /*
-            We take the start point of the other affiliated line
+            We take the start point of the other affiliated line (here 1/2/3/4 are the points)
             The representation of the array parkingPlaces[i][0/1/2/3], each number represent a point a the square
-            |  p  0  p  2  p  |
-            |  l  |  l  |  l  |
-            |  a  |  a  |  a  |
-            |  c  |  c  |  c  |
-            |  e  1  e  3  e  |
-            --------------------separation line
+            |  p    0    p    2    p  |
+            |  l    |    l    |    l  |
+            |  a    |    a    |    a  |
+            |  c    |    c    |    c  |
+            |  e    1    e    3    e  |
+            ---------------------------------separation line
             */
+
+
+            //intersection lines[i][one of the 2 lines which create the intersection][x/y of point 1, x/y of point 2]
+
             parkingPlaces[ParkingPlaceindex][0] = Point(intersections_lines[i][0][0], intersections_lines[i][0][1]);
 
             //We also take the two intersection points
             parkingPlaces[ParkingPlaceindex][1] = Point(temp_VectInter[0], temp_VectInter[1]);
             parkingPlaces[ParkingPlaceindex][2] = Point(temp_VectInter[2], temp_VectInter[3]);
 
-            //We need to find the second start point using the second intersection point
+            //We need to find the second start point of the line using the second intersection point
             if (areColinear(vectInter, vect2line2)) {
                 parkingPlaces[ParkingPlaceindex][3] = Point(intersections_lines[i + 1][0][0], intersections_lines[i + 1][0][1]);
                 //Here we take the second end point
@@ -541,8 +536,6 @@ int main()
             parkingPlaces[ParkingPlaceindex][1] = Point(temp_VectInter[0], temp_VectInter[1]);
             parkingPlaces[ParkingPlaceindex][2] = Point(temp_VectInter[2], temp_VectInter[3]);
 
-
-
             if (areColinear(vectInter, vect2line2)) {
                 parkingPlaces[ParkingPlaceindex][3] = Point(intersections_lines[i + 1][0][0], intersections_lines[i + 1][0][1]);
                 parkingPlaces[ParkingPlaceindex + 1][3] = Point(intersections_lines[i + 1][0][2], intersections_lines[i + 1][0][3]);
@@ -557,22 +550,22 @@ int main()
             parkingPlaces[ParkingPlaceindex + 1][2] = Point(temp_VectInter[2], temp_VectInter[3]);
         }
         else {
-            cout << "on a un probleme d'ordre \n";
+            cout << "error : we have an order problem \n";
         }
         ParkingPlaceindex += 2;
     }
 
-    //----------------    We are going to check the mean background color value    -----------------------------------
+    //----------------    We are going to check the mean background color   -------------------
 
     imshow("img début", img);
 
-    // convert to float & reshape to a [3 x W*H] Mat 
-    //  (so every pixel is on a row of it's own)
-
     /*
-    * CV_32F is float - the pixel can have any value between 0-1.0, this is useful for some sets of calculations on data -
-    * but it has to be converted into 8bits to save or display by multiplying each pixel by 255.
+       convert to float & reshape to a [3 x W*H] Mat 
+       (so every pixel is on a row of it's own)
+       CV_32F is float - the pixel can have any value between 0-1.0, this is useful for some sets of calculations on data -
+       but it has to be converted into 8bits to save or display by multiplying each pixel by 255.
     */
+
     Mat img_reduced_background_color;
     img.convertTo(img_reduced_background_color, CV_32F);
     img_reduced_background_color = img_reduced_background_color.reshape(1, img_reduced_background_color.total());
@@ -585,7 +578,7 @@ int main()
     * As an output, bestLabelsi contains a 0-based cluster index for the sample stored in the ith row of the samples matrix.
     *
     * labels : Input/output integer array that stores the cluster indices for every sample.
-    * centers : 	Output matrix of the cluster centers, one row per each cluster center.
+    * centers (mean_background_value): 	Output matrix of the cluster centers, one row per each cluster center.
     */
 
     Mat labels, mean_background_value;
@@ -593,16 +586,9 @@ int main()
     //we keep 2 for the second argument, because we want a lower margin error -> 2 is the number of mean colors
     kmeans(img_reduced_background_color, 2, labels, TermCriteria(TermCriteria::COUNT, 10, 1.0), 3, KMEANS_PP_CENTERS, mean_background_value);
 
-    cout << " centers  : " << (int)mean_background_value.at<float>(0, 0) << "\n";
-    cout << " centers  : " << (int)mean_background_value.at<float>(0, 1) << "\n";
-    cout << " centers  : " << (int)mean_background_value.at<float>(0, 2) << "\n";
-    cout << " centers  : " << mean_background_value.row(0) << "\n";
-
-
     // reshape both to a single row of Vec3f pixels
     mean_background_value = mean_background_value.reshape(3, mean_background_value.rows);
     img_reduced_background_color = img_reduced_background_color.reshape(3, img_reduced_background_color.rows);
-
 
     // back to 2d, and uchar:
     img = img_reduced_background_color.reshape(3, img.rows);
@@ -621,12 +607,15 @@ int main()
     // optional visualization:
     imshow("CENTERS", draw);
 
-    int MarginColor_error = 10;
+    // -----------    We compare the mean background color with the pixel color of the middle of the parking place   ---------------
+
+    int MarginColor_error = 10; // value betwenn 0-255
     bool flag = false;
     int Nb_takenPlaces = 0;
 
     for (int i = 0; i < NB_places; i++)
     {
+        // the diagonals between the point 0/1/2/3 of the parking place
         Vec4i diagonal1;
         diagonal1[0] = parkingPlaces[i][0].x;
         diagonal1[1] = parkingPlaces[i][0].y;
@@ -641,15 +630,15 @@ int main()
 
         Point middle = intersection(diagonal1, diagonal2);
 
-
+        // We check the neighbors pixel of the middle one
         for (int m = -3; m < 4; m++) {
             for (int n = -3; n < 4; n++) {
                 Vec3b pixel_temp = img.at<Vec3b>(middle.y + n, middle.x + m);
                 //We compare the two pixel with an error margin in BGR
 
-                if (!(pixel_temp[0] >= (int)mean_background_value.at<float>(0, 0) - MarginColor_error && pixel_temp[0] <= (int)mean_background_value.at<float>(0, 0) + MarginColor_error)
-                    || !(pixel_temp[1] >= (int)mean_background_value.at<float>(0, 1) - MarginColor_error && pixel_temp[1] <= (int)mean_background_value.at<float>(0, 1) + MarginColor_error)
-                    || !(pixel_temp[2] >= (int)mean_background_value.at<float>(0, 2) - MarginColor_error && pixel_temp[2] <= (int)mean_background_value.at<float>(0, 2) + MarginColor_error)) {
+                if (  !(pixel_temp[0] >= (int)mean_background_value.at<float>(0, 0) - MarginColor_error && pixel_temp[0] <= (int)mean_background_value.at<float>(0, 0) + MarginColor_error)
+                   || !(pixel_temp[1] >= (int)mean_background_value.at<float>(0, 1) - MarginColor_error && pixel_temp[1] <= (int)mean_background_value.at<float>(0, 1) + MarginColor_error)
+                   || !(pixel_temp[2] >= (int)mean_background_value.at<float>(0, 2) - MarginColor_error && pixel_temp[2] <= (int)mean_background_value.at<float>(0, 2) + MarginColor_error)) {
                     flag = true;
                 }
             }
@@ -694,7 +683,7 @@ int main()
 
 
     // free space
-    for (int f = 0; f < lenght; f++)
+    for (int f = 0; f < Nb_bestLines; f++)
         free(intersections_lines[f]);
     free(intersections_lines);
 
@@ -704,34 +693,5 @@ int main()
 
     waitKey(0); // Wait for any keystroke in the window
     return 0;
-
-    // test code
-    /*
-    circle(img_bw_lines2, Point(best_lines[0][0], best_lines[0][1]), 2, new Scalar(100, 255, 255), 10);
-    circle(img_bw_lines2, Point(best_lines[0][2], best_lines[0][3]), 2, 255, 10);
-
-    circle(img_bw_lines2, Point(best_lines[5][0], best_lines[5][1]), 2, new Scalar(100, 255, 255), 10);
-    circle(img_bw_lines2, Point(best_lines[5][2], best_lines[5][3]), 2, 255, 10);
-
-    // 3 et 5 sont sur une m�me  ligne, un des deux doit etre DEGAGE CE FDP
-
-    cout << "---------\n";
-
-    cout << "x0 depart = " << best_lines[0][0] << " \n";
-    cout << "y0 depart = " << best_lines[0][1] << " \n";
-    cout << "x0 fin = " << best_lines[0][2] << " \n";
-    cout << "y0 fin = " << best_lines[0][3] << " \n";
-
-    cout << "x5 depart = " << best_lines[5][0] << " \n";
-    cout << "y5 depart = " << best_lines[5][1] << " \n";
-    cout << "x5 fin = " << best_lines[5][2] << " \n";
-    cout << "y5 fin = " << best_lines[5][3] << " \n";
-
-    cout << "depart confondu = " << areSame_startPoint(best_lines[0], best_lines[5], 50) << " \n";
-    cout << "fin confondu = " << areSame_endPoint(best_lines[0], best_lines[5], 50) << " \n";
-    cout << "tout confondu = " << areSame_startEnd_Points(best_lines[0], best_lines[5], 50) << " \n";
-    cout << "sont colineaire = " << areColinear(point_to_vector(best_lines[0]), point_to_vector(best_lines[5])) << " \n";
-    */
-
 }
 
