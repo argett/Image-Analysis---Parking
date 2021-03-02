@@ -159,9 +159,10 @@ Point intersection(Vec4i l1, Vec4i l2)
     return Point(x, y);
 }
 
-void imgShowDEBUG(string name, Mat img) {
+void imgShowDEBUG(string name, Mat img, bool stop) {
     imshow(name, img);
-    waitKey(0);
+    if(stop)
+        waitKey(0);
 }
 
 
@@ -363,6 +364,7 @@ int main()
 
     //--------------    We analyse all the lines to find the intersections point between the places's white lines and the middle white line   -----------------------------------
 
+    bool atLeastOneIntersection = false;
     int Nb_Intersections = 0;
     int Nb_bestLines = static_cast<int>(best_lines.size());;
     Point* intersections_points = new Point[Nb_bestLines];
@@ -375,6 +377,7 @@ int main()
     // We find the intersection and put them in an array, we also store the lines that intersect
     for (size_t u = 0; u < best_lines.size() - 1; u++)
     {
+        atLeastOneIntersection = false;
         for (size_t v = u + 1; v < best_lines.size(); v++)
         {
             if (!AreTrueColinear(point_to_vector(best_lines[u]), point_to_vector(best_lines[v])))
@@ -390,8 +393,14 @@ int main()
                     intersections_lines[Nb_Intersections][1] = best_lines[v];
 
                     Nb_Intersections++;
+                    atLeastOneIntersection = true;
                 }
             }
+        }
+
+        // if a line has not intersection (random line nowhere)
+        if (!atLeastOneIntersection) {
+            best_lines.erase(best_lines.begin() + u);
         }
     }
 
