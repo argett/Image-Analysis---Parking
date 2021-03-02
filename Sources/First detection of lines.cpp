@@ -164,7 +164,7 @@ Point intersection(Vec4i l1, Vec4i l2)
 int main()
 {
     //read the image file
-    Mat img = imread("./Images/parking6.jpg");
+    Mat img = imread("./Images/parking3.jpg");
     int imgWidth = img.cols;
 
     if (img.empty()) // Check for failure
@@ -237,9 +237,19 @@ int main()
 
 
     // ----------- creation of third image ----------------
+    //We creat multiple images to show every steps
+    Mat img_falsePoints = img.clone();
+    Mat img_rightPoints = img.clone();
+    //We print the result of the HoughLines
+    display_lines(parking_lines, img_falsePoints);
+    for (size_t i = 0; i < parking_lines.size(); i++) {
+        circle(img_falsePoints, Point(parking_lines[i][0], parking_lines[i][1]), 2, Scalar(255, 255, 255), 10);
+        circle(img_falsePoints, Point(parking_lines[i][2], parking_lines[i][3]), 2, Scalar(255, 255, 255), 10);
 
+    }
     // To store all lines/points without points in the same near area (we don t know how to delete so we create a new one)
     vector<Vec4i> best_lines = parking_lines;
+    cout << parking_lines[0];
     bool Pd_confondue;
     bool Pf_confondue;
     bool PdPf_confondue;
@@ -370,9 +380,15 @@ int main()
             }
         }
     }
+    //We print the result in a dedicate image
+    display_lines(best_lines, img_rightPoints);
+    for (size_t j = 0; j < best_lines.size(); j++) {
+        circle(img_rightPoints, Point(best_lines[j][0], best_lines[j][1]), 2, Scalar(255, 255, 255), 10);
+        circle(img_rightPoints, Point(best_lines[j][2], best_lines[j][3]), 2, Scalar(255, 255, 255), 10);
+
+    }
 
     //--------------    We analyse all the lines to find the intersections point between the places's white lines and the middle white line   -----------------------------------
-
 
     int Nb_Intersections = 0;
     int lenght = static_cast<int>(best_lines.size());;
@@ -417,7 +433,13 @@ int main()
             extreme_left = i;
         }
     }
+    //We want to show the intersections in a dedicate image
+    Mat imgIntersections = img_rightPoints.clone();
+    for (int i = 0; i < Nb_Intersections; i++)
+    {
+        circle(imgIntersections, final_intersections_points[i], 2, Scalar(0, 255, 255), 10);
 
+    }
     //We sort the extreme_left point as the start of the array
     Point temp_Inter = final_intersections_points[0];
     final_intersections_points[0] = final_intersections_points[extreme_left];
@@ -618,8 +640,9 @@ int main()
     }
     draw.convertTo(draw, CV_8U);
 
-    // optional visualization:
-    imshow("CENTERS", draw);
+    //We want to show the final result in a dedicate image
+    Mat img_Final = imgIntersections.clone();
+
 
     int MarginColor_error = 10;
     bool flag = false;
@@ -656,10 +679,13 @@ int main()
         }
         if (flag) {
             Nb_takenPlaces++;
+            circle(img_Final, middle, 2, Scalar(255, 0, 0), 10);
             flag = false;
         }
+        else {
+            circle(img_Final, middle, 2, Scalar(0, 0, 255), 10);
+        }
 
-        circle(img, middle, 2, Scalar(255, 0, 0), 10);
     }
 
 
@@ -680,18 +706,36 @@ int main()
         cout << "x = " << (int)final_intersections[aaaaa].x << ", y = " << (int)intersections[aaaaa].y << "\n";
     }
     */
-
+    
 
 
     imshow("img", img);
     //imshow("GREY", img_gray_scale);
-
+    
     display_lines(parking_lines, img_bw_lines);
     display_lines(best_lines, img_bw_lines2);
+    
+
+    
+   
+    
 
     //imshow("Image parking lines - img_bw_lines", img_bw_lines);
     imshow("Image parking best_lines - img_bw_lines2", img_bw_lines2);
 
+    //We show the first stage
+    imshow("Wrong points", img_falsePoints);
+
+    
+    //We show the second step with the right points and the right lines
+    imshow("Right Points", img_rightPoints);
+
+    //We show the third step, the intersections
+    imshow("Intersections", imgIntersections);
+
+
+    //We show the final step, the available parking places
+    imshow("Image finale", img_Final);
 
     // free space
     for (int f = 0; f < lenght; f++)
