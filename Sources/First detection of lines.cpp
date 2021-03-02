@@ -159,14 +159,19 @@ Point intersection(Vec4i l1, Vec4i l2)
     return Point(x, y);
 }
 
+void imgShowDEBUG(string name, Mat img) {
+    imshow(name, img);
+    waitKey(0);
+}
+
 
 int main()
 {
     //read the image file
-    Mat img = imread("./Images/parking3.jpg");
-    int imgWidth = img.cols;
+    Mat image_base = imread("parking3.jpg");
+    int imgWidth = image_base.cols;
 
-    if (img.empty()) // Check for failure
+    if (image_base.empty()) // Check for failure
     {
         cout << "Could not open or find the image" << endl;
         system("pause"); //wait for any key press
@@ -177,7 +182,7 @@ int main()
 
     // Convert to gray-scale
     Mat img_gray_scale;
-    cvtColor(img, img_gray_scale, cv::COLOR_RGB2GRAY);
+    cvtColor(image_base, img_gray_scale, cv::COLOR_RGB2GRAY);
 
     // Store the edges   
     Mat FirstEdges;
@@ -226,26 +231,27 @@ int main()
     // to get beautiful lines
     dilate(img_bw_lines2, img_bw_lines2, Mat(), Point(-1, -1), 1);
 
+
     // Create a vector to store lines of the image
     vector<Vec4i> parking_lines;
 
     // Apply Second Hough Transform
     HoughLinesP(SecondEdges, parking_lines, 1, CV_PI / 180, 100, 20, 10000);
 
-
     // ----------- creation of image with only perfects white lines and a black background ----------------
 
-    // ----------- creation of third image ----------------
+
     //We creat multiple images to show every steps
-    Mat img_falsePoints = img.clone();
-    Mat img_rightPoints = img.clone();
+    Mat img_falsePoints = image_base.clone();
+    Mat img_rightPoints = image_base.clone();
     //We print the result of the HoughLines
     display_lines(parking_lines, img_falsePoints);
     for (size_t i = 0; i < parking_lines.size(); i++) {
         circle(img_falsePoints, Point(parking_lines[i][0], parking_lines[i][1]), 2, Scalar(255, 255, 255), 10);
         circle(img_falsePoints, Point(parking_lines[i][2], parking_lines[i][3]), 2, Scalar(255, 255, 255), 10);
-
     }
+
+
     // To store all lines/points without points in the same near area (we don t know how to delete so we create a new one)
     vector<Vec4i> best_lines = parking_lines;
     bool startPoint_Confused;
@@ -274,7 +280,7 @@ int main()
                 endPoint_Confused = areSame_endPoint(line, line2, margin_error);
                 startEndPoint_Confused = areSame_startEnd_Points(line, line2, margin_error);
 
-                if (startPoint_Confused && !endPoint_Confused)
+                if ((startPoint_Confused && !endPoint_Confused) || (!startPoint_Confused && endPoint_Confused))
                 {
                     // 1 check is they are colinear + size of the segment
                     // 2 if colinear, then we take the larger
@@ -296,34 +302,7 @@ int main()
                     }
                     else
                     {
-                        cout << "error : !endPoint_confused & startPoint_confused = ORTHOGONAL\n";
-                    }
-
-                }
-                else if (!startPoint_Confused && endPoint_Confused)
-                {
-                    // 1 check is they are colinear + size of the segment
-                    // 2 if colinear, then we take the larger
-
-                    int* Vect1 = point_to_vector(line);
-                    int* Vect2 = point_to_vector(line2);
-
-                    if (areColinear(Vect1, Vect2))
-                    {
-                        if (length(Vect1) > length(Vect2))
-                        {
-
-                            best_lines.erase(best_lines.begin() + v);
-                        }
-                        else
-                        {
-                            best_lines.erase(best_lines.begin() + u);
-                        }
-                        allClear = false;
-                    }
-                    else
-                    {
-                        cout << "error : endPoint_confused & !startPoint_confused = ORTHOGONAL\n";
+                        // "error : (!endPoint_confused & startPoint_confused) || (endPoint_confused & !startPoint_confused) = ORTHOGONAL\n";
                     }
 
                 }
@@ -364,7 +343,7 @@ int main()
                     }
                     else
                     {
-                        cout << "erreor : end & start point confused = ORTHOGONAL\n";
+                        // "erreor : end & start point confused = ORTHOGONAL\n";
                     }
                 }
                 else
@@ -403,7 +382,7 @@ int main()
                 // because some lines are quasi-parallels, we reject intersection at very higth/low X/Y position (register the ones in the image only)
 
                 Point inter = intersection(best_lines[u], best_lines[v]);
-                if ((inter.x < img.size().width && inter.x > 0) && (inter.y < img.size().height && inter.y>0))
+                if ((inter.x < image_base.size().width && inter.x > 0) && (inter.y < image_base.size().height && inter.y>0))
                 {
                     intersections_points[Nb_Intersections] = inter;
                     //we store the affiliate line in the same position
@@ -579,8 +558,6 @@ int main()
 
     //----------------    We are going to check the mean background color   -------------------
 
-    imshow("img début", img);
-
     /*
        convert to float & reshape to a [3 x W*H] Mat 
        (so every pixel is on a row of it's own)
@@ -589,7 +566,7 @@ int main()
     */
 
     Mat img_reduced_background_color;
-    img.convertTo(img_reduced_background_color, CV_32F);
+    image_base.convertTo(img_reduced_background_color, CV_32F);
     img_reduced_background_color = img_reduced_background_color.reshape(1, img_reduced_background_color.total());
 
     // do kmeans
@@ -613,8 +590,8 @@ int main()
     img_reduced_background_color = img_reduced_background_color.reshape(3, img_reduced_background_color.rows);
 
     // back to 2d, and uchar:
-    img = img_reduced_background_color.reshape(3, img.rows);
-    img.convertTo(img, CV_8U);
+    image_base = img_reduced_background_color.reshape(3, image_base.rows);
+    image_base.convertTo(image_base, CV_8U);
 
     int siz = 64;
     Mat cent = mean_background_value.reshape(3, mean_background_value.rows);
@@ -655,7 +632,7 @@ int main()
         // We check the neighbors pixel of the middle one
         for (int m = -3; m < 4; m++) {
             for (int n = -3; n < 4; n++) {
-                Vec3b pixel_temp = img.at<Vec3b>(middle.y + n, middle.x + m);
+                Vec3b pixel_temp = image_base.at<Vec3b>(middle.y + n, middle.x + m);
                 //We compare the two pixel with an error margin in BGR
 
                 if (  !(pixel_temp[0] >= (int)mean_background_value.at<float>(0, 0) - MarginColor_error && pixel_temp[0] <= (int)mean_background_value.at<float>(0, 0) + MarginColor_error)
@@ -677,53 +654,22 @@ int main()
     }
 
 
-    cout << "il y a : " << NB_places << " places dont " << Nb_takenPlaces << " prises \n";
+    // ---------- Result display -----------
 
+    cout << "Dans ce parking, il y a : " << NB_places << " places dont " << Nb_takenPlaces << " prises\n";
 
-    //circle(img_bw_lines2, final_intersections_points[0], 2, new Scalar(100, 255, 255), 10);
-    /*
-    cout << "intersections = \n";
-    for (int aaaaa = 0; aaaaa <= (lenght/2); aaaaa++)
-    {
-        cout << "x = " << (int)intersections[aaaaa].x << ", y = " << (int)intersections[aaaaa].y << "\n";
-    }
-
-    cout << "final_intersections = \n";
-    for (int aaaaa = 0; aaaaa < cpt; aaaaa++)
-    {
-        cout << "x = " << (int)final_intersections[aaaaa].x << ", y = " << (int)intersections[aaaaa].y << "\n";
-    }
-    */
-    
-
-
-    imshow("img", img);
-    //imshow("GREY", img_gray_scale);
+    imshow("1 : basic image", image_base);
+    imshow("2 : image in gray scale", img_gray_scale);
     
     display_lines(parking_lines, img_bw_lines);
     display_lines(best_lines, img_bw_lines2);
-    
 
-    
-   
-    
-
-    //imshow("Image parking lines - img_bw_lines", img_bw_lines);
-    imshow("Image parking best_lines - img_bw_lines2", img_bw_lines2);
-
-    //We show the first stage
-    imshow("Wrong points", img_falsePoints);
-
-    
-    //We show the second step with the right points and the right lines
-    imshow("Right Points", img_rightPoints);
-
-    //We show the third step, the intersections
-    imshow("Intersections", imgIntersections);
-
-
-    //We show the final step, the available parking places
-    imshow("Image finale", img_Final);
+    imshow("3 : first line detection", img_bw_lines);
+    imshow("4 : corresponding points of first lines", img_falsePoints);
+    imshow("5 : fit lines detection + erosion/dilatation", img_bw_lines2);
+    imshow("6 : corresponding points after fit lines", img_rightPoints);
+    imshow("7 : detection of intersection", imgIntersections);
+    imshow("8 : detection of parking place + conclusion", img_Final);
 
     // free space
     for (int f = 0; f < Nb_bestLines; f++)
