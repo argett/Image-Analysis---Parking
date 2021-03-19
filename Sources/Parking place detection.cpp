@@ -10,15 +10,17 @@ using namespace std;
 
 /*
 
-    The image must contain only one big white line with a lot of shorts perpendiculars to it
-    The background must be more or less at the same color
+    The image must contain only one big white line with a lot of shorts perpendiculars to it.
+    If there are 2 or more, the program will crash or be in an infinite loop.
+    The background must be more or less at the same color.
+    If the analyse of the image isn't good, the parameters to change are the parameter in HoughLineP
 
 */
 
 
-int  dist(int x, int y)
+int  distance(int i, int j)
 {
-    int res = x - y;
+    int res = i - j;
 
     if (res > 0)
     {
@@ -30,7 +32,6 @@ int  dist(int x, int y)
     }
 }
 
-
 Vec4i average_line(Vec4i seg1, Vec4i seg2)
 {
     Vec4i average;
@@ -41,7 +42,6 @@ Vec4i average_line(Vec4i seg1, Vec4i seg2)
 
     return average;
 }
-
 
 int* point_to_vector(Vec4i segment)
 {
@@ -69,6 +69,7 @@ bool areColinear(int* v1, int* v2)
 
 bool AreTrueColinear(int* v1, int* v2)
 {
+    // the exact colinear function
     float k = (float)v1[0] / (float)v2[0];
     if (v2[1] * k == v1[1])
         return true;
@@ -78,8 +79,8 @@ bool AreTrueColinear(int* v1, int* v2)
 
 void display_lines(vector<Vec4i> lines, Mat img)
 {
-    for (size_t j = 0; j < lines.size(); j++) {
-
+    for (size_t j = 0; j < lines.size(); j++) 
+    {
         Vec4i l = lines[j];
         line(img, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255, 0, 0), 3, LINE_AA);
     }
@@ -87,52 +88,52 @@ void display_lines(vector<Vec4i> lines, Mat img)
 
 bool areSame_startPoint(Vec4i l1, Vec4i l2, int margin_error)
 {
-    //point x depart ligne 1
+    //point x start line 1
     int Pdx1 = l1[0];
-    //point y depart ligne 1
+    //point y start line 1
     int Pdy1 = l1[1];
 
-    //point x depart ligne 2
+    //point x start line 2
     int Pdx2 = l2[0];
-    //point y depart ligne 2
+    //point y start line 2
     int Pdy2 = l2[1];
 
 
-    if (dist(Pdx1, Pdx2) < margin_error && dist(Pdy1, Pdy2) < margin_error)
+    if (distance(Pdx1, Pdx2) < margin_error && distance(Pdy1, Pdy2) < margin_error)
         return true;
     return false;
 }
 
 bool areSame_endPoint(Vec4i l1, Vec4i l2, int margin_error)
 {
-    //point x fin ligne 1
+    //point x end line 1
     int Pfx1 = l1[2];
-    //point y fin ligne 1
+    //point y end line 1
     int Pfy1 = l1[3];
 
-    //point x fin ligne 2
+    //point x end line 2
     int Pfx2 = l2[2];
-    //point y fin ligne 2
+    //point y end line 2
     int Pfy2 = l2[3];
 
-    if (dist(Pfx1, Pfx2) < margin_error && dist(Pfy1, Pfy2) < margin_error)
+    if (distance(Pfx1, Pfx2) < margin_error && distance(Pfy1, Pfy2) < margin_error)
         return true;
     return false;
 }
 
 bool areSame_startEnd_Points(Vec4i l1, Vec4i l2, int margin_error)
 {
-    //point x depart ligne 1
+    //point x start line 1
     int Pdx1 = l1[0];
-    //point y fin ligne 1
+    //point y end line 1
     int Pfy1 = l1[3];
 
-    //point y d�part ligne 2
+    //point y start line 2
     int Pdy2 = l2[1];
-    //point x fin ligne 2
+    //point x end line 2
     int Pfx2 = l2[2];
 
-    if (dist(Pdx1, Pfx2) < margin_error && dist(Pdy2, Pfy1) < margin_error)
+    if (distance(Pdx1, Pfx2) < margin_error && distance(Pdy2, Pfy1) < margin_error)
         return true;
     return false;
 }
@@ -168,8 +169,15 @@ void imgShowDEBUG(string name, Mat img, bool stop) {
 
 int main()
 {
-    //read the image file
-    Mat image_base = imread("parking3.jpg");
+    Mat image_base = imread("parking3.jpg"); //read the image file    
+    Mat img_gray_scale;             // Convert to gray-scale      
+    Mat FirstEdges;                 // Store the first detected edges      
+    Mat SecondEdges;                // Store the second fitted edges      
+    Mat img_bw_lines;               // image in black and white only with the 1st lines detected + random white pixels    
+    Mat img_bw_lines2;              // image in black and white only with the 2nd lines detected + random white pixels    
+    vector<Vec4i> all_lines;        // Create a vector to store all detected lines of the image    
+    vector<Vec4i> parking_lines;    // Create a vector to store the final lines of the image
+
     int imgWidth = image_base.cols;
 
     if (image_base.empty()) // Check for failure
@@ -179,20 +187,12 @@ int main()
         return -1;
     }
 
-    //------   Read Pictures with first detection of lines + second gray scale to try to keep only the white lines  -----///
+    /* ------   Read Pictures with first detection of lines + second gray scale to try to keep only the white lines  ----- */
 
-    // Convert to gray-scale
-    Mat img_gray_scale;
     cvtColor(image_base, img_gray_scale, cv::COLOR_RGB2GRAY);
-
-    // Store the edges   
-    Mat FirstEdges;
 
     // Find the edges in the image using canny detector
     Canny(img_gray_scale, FirstEdges, 200, 255);
-
-    // Create a vector to store lines of the image
-    vector<Vec4i> all_lines;
 
     // Apply First Hough Transform
     HoughLinesP(FirstEdges, all_lines, 1, CV_PI / 180, 100, 20, 20);
@@ -202,26 +202,16 @@ int main()
         line(img_gray_scale, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255, 0, 0), 3, LINE_AA);
     }
 
-    // image in black and white only with the lines detected + random white pixels
-    Mat img_bw_lines;
-
     // to erase the cars and keep only the whites lines + random white pixels
     threshold(img_gray_scale, img_bw_lines, 254, 255, THRESH_BINARY);
 
     // to erase random white pixels
     erode(img_bw_lines, img_bw_lines, Mat());
-
     // to get beautiful lines
     dilate(img_bw_lines, img_bw_lines, Mat(), Point(-1, -1), 1);
 
-    // Store the edges   
-    Mat SecondEdges;
-
     // Find the edges in the image using canny detector, every pixel with color < 200 is black
     Canny(img_bw_lines, SecondEdges, 200, 255);
-
-    // image in black and white only with the lines detected + random white pixels
-    Mat img_bw_lines2;
 
     // to erase the cars and keep only the whites lines + random white pixels
     threshold(img_gray_scale, img_bw_lines2, 254, 255, THRESH_BINARY);
@@ -232,32 +222,30 @@ int main()
     // to get beautiful lines
     dilate(img_bw_lines2, img_bw_lines2, Mat(), Point(-1, -1), 1);
 
-
-    // Create a vector to store lines of the image
-    vector<Vec4i> parking_lines;
-
     // Apply Second Hough Transform
     HoughLinesP(SecondEdges, parking_lines, 1, CV_PI / 180, 100, 20, 10000);
 
-    // ----------- creation of image with only perfects white lines and a black background ----------------
+
+    /* ----------- creation of image with only perfects white lines and a black background ---------------- */
 
 
     //We creat multiple images to show every steps
     Mat img_falsePoints = image_base.clone();
     Mat img_rightPoints = image_base.clone();
+
+    // To store all lines/points without points in the same near area (we don t know how to delete so we create a new one)
+    vector<Vec4i> best_lines = parking_lines;
+    bool startPoint_Confused;    // are the beginning of the line 1 and the begenning of the line 2 at the same spot
+    bool endPoint_Confused;      // are the end of the line 1 and the end of the line 2 at the same spot
+    bool startEndPoint_Confused; // are the beginning of the line 1 and the end of the line 2 at the same spot (or vice versa)
+
     //We print the result of the HoughLines
     display_lines(parking_lines, img_falsePoints);
+
     for (size_t i = 0; i < parking_lines.size(); i++) {
         circle(img_falsePoints, Point(parking_lines[i][0], parking_lines[i][1]), 2, Scalar(255, 255, 255), 10);
         circle(img_falsePoints, Point(parking_lines[i][2], parking_lines[i][3]), 2, Scalar(255, 255, 255), 10);
     }
-
-
-    // To store all lines/points without points in the same near area (we don t know how to delete so we create a new one)
-    vector<Vec4i> best_lines = parking_lines;
-    bool startPoint_Confused;
-    bool endPoint_Confused;
-    bool startEndPoint_Confused;
 
     // check the points between them to keep only one by line
     for (size_t u = 0; u < best_lines.size() - 1; u++)
@@ -344,7 +332,7 @@ int main()
                     }
                     else
                     {
-                        // "erreor : end & start point confused = ORTHOGONAL\n";
+                        // "end & start point confused = ORTHOGONAL. This error should be corrected in the next iterations\n";
                     }
                 }
                 else
@@ -362,12 +350,19 @@ int main()
 
     }
 
-    //--------------    We analyse all the lines to find the intersections point between the places's white lines and the middle white line   -----------------------------------
+    /* --------------    We analyse all the lines to find the intersections point between the places's white lines and the middle white line   --------------------------------- */
 
-    bool atLeastOneIntersection = false;
-    int Nb_Intersections = 0;
+    /*  We only consider one big line in common where there are all the intersections.
+    *   If we want a more complex image with multiple big transverse line, then we have to change a big the algorithm.
+    *   Indeed since there are N big lines, an algorithm would be to create N arrays, each array containing his proper intersection.
+    *   But this process is even more complex and difficult to implement.
+    */
+
+    bool atLeastOneIntersection = false; // are the lines u and v intersecting ?
+    int Nb_Intersections = 0;            // the total amount of intersection in the picture
+    int extreme_left = 0;                //The intersection point where final_intersections_points[extreme_left] has the minimal X
     int Nb_bestLines = static_cast<int>(best_lines.size());;
-    Point* intersections_points = new Point[Nb_bestLines];
+    Point* intersections_points = new Point[Nb_bestLines];    
 
     // Creation a 2d array to store the lines which are intersecting
     Vec4i** intersections_lines = (Vec4i**)malloc(Nb_bestLines * sizeof(Vec4i*));
@@ -401,13 +396,12 @@ int main()
         // if a line has not intersection (random line nowhere)
         if (!atLeastOneIntersection) {
             best_lines.erase(best_lines.begin() + u);
+            cout << "deletion of line alone in empty space" << endl;
         }
     }
 
     // New array with intersections which will be reorganized from Xmin to Xmax (left to right)
     Point* final_intersections_points = new Point[Nb_Intersections];
-    //The intersection point where final_intersections_points[extreme_left] has the minimal X
-    int extreme_left = 0;
     for (int i = 0; i < Nb_Intersections; i++)
     {
         final_intersections_points[i] = intersections_points[i];
@@ -418,10 +412,8 @@ int main()
     //We want to show the intersections in a dedicate image
     Mat imgIntersections = img_rightPoints.clone();
     for (int i = 0; i < Nb_Intersections; i++)
-    {
         circle(imgIntersections, final_intersections_points[i], 2, Scalar(0, 255, 255), 10);
 
-    }
     //We sort the extreme_left point as the start of the array
     Point temp_Inter = final_intersections_points[0];
     final_intersections_points[0] = final_intersections_points[extreme_left];
@@ -468,9 +460,11 @@ int main()
     for (int i = 0; i < (Nb_Intersections - 1) * 2; i++)
         parkingPlaces[i] = (Point*)malloc(4 * sizeof(Point));
 
-    //--------------    Starting from the intersection points & corresponding lines, we identify the parking places    ------------------------
+
+    /* --------------    Starting from the intersection points & corresponding lines, we identify the parking places    ------------------------ */
 
     int ParkingPlaceindex = 0;
+
     /*
     Corresponding parking places 
     0 | 2 | 4 ...
@@ -501,7 +495,9 @@ int main()
         {
             /*
             We take the start point of the other affiliated line (here 1/2/3/4 are the points)
-            The representation of the array parkingPlaces[i][0/1/2/3], each number represent a point a the square
+            The representation of the array parkingPlaces[i][0/1/2/3], each number represent a point a the square :
+            (point 1/2/3/4 are not in the correct corner !)
+
             |  p    0    p    2    p  |
             |  l    |    l    |    l  |
             |  a    |    a    |    a  |
@@ -511,8 +507,7 @@ int main()
             */
 
 
-            //intersection lines[i][one of the 2 lines which create the intersection][x/y of point 1, x/y of point 2]
-
+            //intersection_lines[i][one of the 2 lines which create the intersection][x/y of point 1, x/y of point 2]
             parkingPlaces[ParkingPlaceindex][0] = Point(intersections_lines[i][0][0], intersections_lines[i][0][1]);
 
             //We also take the two intersection points
@@ -529,12 +524,12 @@ int main()
                 parkingPlaces[ParkingPlaceindex][3] = Point(intersections_lines[i + 1][1][1], intersections_lines[i + 1][1][1]);
                 parkingPlaces[ParkingPlaceindex + 1][3] = Point(intersections_lines[i + 1][1][2], intersections_lines[i + 1][1][3]);
             }
+
             //We do the same thing using the ends point to find the other place using the same lines and intersections 
-            /*
-            |ParkingPlaceindex|
-            ---------------------
-            |ParkingPlaceindex+1|
-            */
+            //   |ParkingPlaceindex|
+            //  ---------------------
+            //  |ParkingPlaceindex+1|
+            
             parkingPlaces[ParkingPlaceindex + 1][0] = Point(intersections_lines[i][0][2], intersections_lines[i][0][3]);
             parkingPlaces[ParkingPlaceindex + 1][1] = Point(temp_VectInter[0], temp_VectInter[1]);
             parkingPlaces[ParkingPlaceindex + 1][2] = Point(temp_VectInter[2], temp_VectInter[3]);
@@ -565,7 +560,7 @@ int main()
         ParkingPlaceindex += 2;
     }
 
-    //----------------    We are going to check the mean background color   -------------------
+    /* ----------------    We are going to check the mean background color   ------------------- */
 
     /*
        convert to float & reshape to a [3 x W*H] Mat 
@@ -602,22 +597,22 @@ int main()
     image_base = img_reduced_background_color.reshape(3, image_base.rows);
     image_base.convertTo(image_base, CV_8U);
 
-    int siz = 64;
+    int size = 64;
     Mat cent = mean_background_value.reshape(3, mean_background_value.rows);
     // make  a horizontal bar of K color patches:
-    Mat draw(siz, siz * cent.rows, cent.type(), Scalar::all(0));
+    Mat draw(size, size* cent.rows, cent.type(), Scalar::all(0));
     for (int i = 0; i < cent.rows; i++) {
         // set the resp. ROI to that value (just fill it):
-        draw(Rect(i * siz, 0, siz, siz)) = cent.at<Vec3f>(i, 0);
+        draw(Rect(i * size, 0, size, size)) = cent.at<Vec3f>(i, 0);
     }
     draw.convertTo(draw, CV_8U);
 
     //We want to show the final result in a dedicate image
     Mat img_Final = imgIntersections.clone();
 
-    // -----------    We compare the mean background color with the pixel color of the middle of the parking place   ---------------
+    /* -----------    We compare the mean background color with the pixel color of the middle of the parking place   --------------- */
 
-    int MarginColor_error = 10; // value betwenn 0-255
+    int MarginColor_error = 10; // value between 0-255
     bool flag = false;
     int Nb_takenPlaces = 0;
 
